@@ -13,11 +13,10 @@ func WithCommitAndNotifyMiddleware(container *di.Container) func(http.Handler) h
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			next.ServeHTTP(w, r)
 
-			uow := container.Get("uow")().(persistence.Worker)
+			uow := di.GetService[persistence.Worker](container)
 			uow.Commit()
 
-			eventPublisher := container.Get("event-publisher")().(*event.Publisher)
-
+			eventPublisher := di.GetService[*event.Publisher](container)
 			for _, ev := range uow.DomainEvents() {
 				eventPublisher.Notify(ev)
 			}

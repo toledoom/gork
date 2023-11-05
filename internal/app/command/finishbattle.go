@@ -7,7 +7,6 @@ import (
 	"github.com/toledoom/gork/internal/domain/battle"
 	"github.com/toledoom/gork/internal/domain/player"
 	"github.com/toledoom/gork/pkg/cqrs"
-	"github.com/toledoom/gork/pkg/event"
 )
 
 const FinishBattleCmdID = "FinishBattle"
@@ -24,18 +23,15 @@ type FinishBattleHandler struct {
 	br battle.Repository
 	pr player.Repository
 	c  battle.ScoreCalculator
-	ep event.Publisher
 }
 
 func NewFinishBattleHandler(br battle.Repository,
 	pr player.Repository,
-	c battle.ScoreCalculator,
-	ep event.Publisher) *FinishBattleHandler {
+	c battle.ScoreCalculator) *FinishBattleHandler {
 	return &FinishBattleHandler{
 		br: br,
 		pr: pr,
 		c:  c,
-		ep: ep,
 	}
 }
 
@@ -76,17 +72,6 @@ func (fbh FinishBattleHandler) Handle(c cqrs.Command) error {
 	if err != nil {
 		return err
 	}
-
-	// TODO: Delegate to the framework
-	err = fbh.ep.Notify(player.NewScoreUpdatedEvent(player1ID, b.OriginalPlayer1Score, player1.Score))
-	if err != nil {
-		return err
-	}
-	err = fbh.ep.Notify(player.NewScoreUpdatedEvent(player2ID, b.OriginalPlayer2Score, player2.Score))
-	if err != nil {
-		return err
-	}
-	///////////////////////////////////
 
 	return nil
 }

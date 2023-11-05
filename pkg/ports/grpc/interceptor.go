@@ -18,10 +18,10 @@ func wrapper(container *di.Container) func(ctx context.Context, req interface{},
 		// Calls the handler
 		h, err := handler(ctx, req)
 
-		uow := container.Get("uow")().(persistence.Worker)
+		uow := di.GetService[persistence.Worker](container)
 		uow.Commit()
 
-		eventPublisher := container.Get("event-publisher")().(*event.Publisher)
+		eventPublisher := di.GetService[*event.Publisher](container)
 
 		for _, ev := range uow.DomainEvents() {
 			eventPublisher.Notify(ev)

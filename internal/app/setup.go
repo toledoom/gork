@@ -26,31 +26,40 @@ import (
 )
 
 func SetupServices(container *di.Container) {
-	container.Add("redis-client", func() any { return createRedisLocalClient(os.Getenv("REDIS_ADDR")) })
-	container.Add("ranking", func() any {
-		return leaderboard.NewRedisRanking(container.Get("redis-client")().(*redis.Client), "my-ranking")
+	di.AddService[*redis.Client](container, func(*di.Container) *redis.Client {
+		return createRedisLocalClient(os.Getenv("REDIS_ADDR"))
 	})
-	container.Add("dynamo-client", func() any { return createDynamoDBLocalClient(os.Getenv("DYNAMO_ADDR")) })
-	container.Add("player-repository", func() any {
-		return player.NewUowRepository(container.Get("uow")().(persistence.Worker))
+	di.AddService[leaderboarddomain.Ranking](container, func(*di.Container) leaderboarddomain.Ranking {
+		redisClient := di.GetService[*redis.Client](container)
+		return leaderboard.NewRedisRanking(redisClient, "my-ranking")
 	})
-	container.Add("battle-repository", func() any {
-		return battle.NewUowRepository(container.Get("uow")().(persistence.Worker))
+	di.AddService[*dynamodb.Client](container, func(*di.Container) *dynamodb.Client {
+		return createDynamoDBLocalClient(os.Getenv("DYNAMO_ADDR"))
 	})
-	container.Add("score-calculator", func() any {
-		return battledomain.NewEloScoreCalculator(20, 400)
+	di.AddService[playerdomain.Repository](container, func(*di.Container) playerdomain.Repository {
+		return player.NewUowRepository(di.GetService[persistence.Worker](container))
+	})
+	di.AddService[battledomain.Repository](container, func(*di.Container) battledomain.Repository {
+		return battle.NewUowRepository(di.GetService[persistence.Worker](container))
+	})
+	di.AddService[battledomain.ScoreCalculator](container, func(*di.Container) battledomain.ScoreCalculator {
+		// A better idea would be to retrieve these next values from a config repository, since they may vary
+		// depending on several factors (e.g. players levels). In that case, the solution would be to create a
+		// a config repository and inject it as a dependency into the score calculator
+		k := int64(20)
+		s := int64(400)
+		return battledomain.NewEloScoreCalculator(k, s)
 	})
 }
 
 func SetupCommandHandlers(container *di.Container) []cqrs.CommandHandler {
 	commandHandlerList := []cqrs.CommandHandler{
-		command.NewCreatePlayerHandler(container.Get("player-repository")().(playerdomain.Repository)),
-		command.NewStartBattleHandler(container.Get("battle-repository")().(battledomain.Repository)),
+		command.NewCreatePlayerHandler(di.GetService[playerdomain.Repository](container)),
+		command.NewStartBattleHandler(di.GetService[battledomain.Repository](container)),
 		command.NewFinishBattleHandler(
-			container.Get("battle-repository")().(battledomain.Repository),
-			container.Get("player-repository")().(playerdomain.Repository),
-			container.Get("score-calculator")().(battledomain.ScoreCalculator),
-			*event.NewPublisher(),
+			di.GetService[battledomain.Repository](container),
+			di.GetService[playerdomain.Repository](container),
+			di.GetService[battledomain.ScoreCalculator](container),
 		),
 	}
 
@@ -59,8 +68,8 @@ func SetupCommandHandlers(container *di.Container) []cqrs.CommandHandler {
 
 func SetupQueryHandlers(container *di.Container) []cqrs.QueryHandler {
 	queryHandlerList := []cqrs.QueryHandler{
-		query.NewGetRankHandler(container.Get("ranking")().(leaderboarddomain.Ranking)),
-		query.NewGetTopPlayersHandler(container.Get("ranking")().(leaderboarddomain.Ranking)),
+		query.NewGetRankHandler(di.GetService[leaderboarddomain.Ranking](container)),
+		query.NewGetTopPlayersHandler(di.GetService[leaderboarddomain.Ranking](container)),
 	}
 
 	return queryHandlerList
@@ -69,19 +78,19 @@ func SetupQueryHandlers(container *di.Container) []cqrs.QueryHandler {
 func SetupDataMapper(dataMapper *persistence.DataMapper, container *di.Container) {
 	dataMapper.AddPersistenceFn(reflect.TypeOf(battledomain.Battle{}), persistence.EntityNew, func(e entity.Entity) error {
 		b := e.(*battledomain.Battle)
-		bdr := battle.NewDynamoStorage(container.Get("dynamo-client")().(*dynamodb.Client))
+		bdr := battle.NewDynamoStorage(di.GetService[*dynamodb.Client](container))
 		return bdr.Add(b)
 	})
 
 	dataMapper.AddPersistenceFn(reflect.TypeOf(battledomain.Battle{}), persistence.EntityDirty, func(e entity.Entity) error {
 		b := e.(*battledomain.Battle)
-		bdr := battle.NewDynamoStorage(container.Get("dynamo-client")().(*dynamodb.Client))
+		bdr := battle.NewDynamoStorage(di.GetService[*dynamodb.Client](container))
 		return bdr.Update(b)
 	})
 }
 
 func SetupEventPublisher(eventPublisher *event.Publisher, container *di.Container) {
-	r := container.Get("ranking")().(leaderboarddomain.Ranking)
+	r := di.GetService[leaderboarddomain.Ranking](container)
 	eventPublisher.Subscribe(leaderboarddomain.NewPlayerScoreUpdatedEventHandler(r), &playerdomain.ScoreUpdatedEvent{})
 }
 

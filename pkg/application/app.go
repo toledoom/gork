@@ -42,11 +42,12 @@ func New(commandHandlersSetup CommandHandlersSetup, queryHandlersSetup QueryHand
 
 func (app *App) Start(servicesSetup ServicesSetup, dataMapperSetup DataMapperSetup, eventPublisherSetup EventPublisherSetup) {
 	servicesSetup(app.container)
-	app.container.Add("uow", func() any { return persistence.NewUnitOfWork(app.dataMapper) })
+	di.AddService[persistence.Worker](app.container, func(*di.Container) persistence.Worker { return persistence.NewUnitOfWork(app.dataMapper) })
 
 	dataMapperSetup(app.dataMapper, app.container)
 	eventPublisherSetup(app.eventPublisher, app.container)
-	app.container.Add("event-publisher", func() any { return app.eventPublisher })
+	// app.container.Add("event-publisher", func() any { return app.eventPublisher })
+	di.AddService[*event.Publisher](app.container, func(*di.Container) *event.Publisher { return event.NewPublisher() })
 
 	app.queryBus = cqrs.NewQueryBus(app.queryHandlersSetup(app.container))
 	app.commandBus = cqrs.NewCommandBus(app.commandHandlersSetup(app.container))
