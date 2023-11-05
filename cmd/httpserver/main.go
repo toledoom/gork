@@ -16,9 +16,9 @@ func main() {
 
 	r := chi.NewRouter()
 	r.Use(render.SetContentType(render.ContentTypeJSON))
-	r.Post("/battle/start", httpApi.StartBattleHandler)
-	r.Put("/battle/finish", httpApi.FinishBattleHandler)
-	r.Post("/player/create", httpApi.CreatePlayerHandler)
+	r.Post("/battle", httpApi.StartBattleHandler)
+	r.Put("/battle", httpApi.FinishBattleHandler)
+	r.Post("/player", httpApi.CreatePlayerHandler)
 	r.Get("/player/{playerID}", httpApi.GetPlayerByIDHandler)
 	r.Get("/rank", httpApi.GetRankHandler)
 	r.Get("/rank/top_players", httpApi.GetTopPlayersHandler)
