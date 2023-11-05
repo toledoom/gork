@@ -9,12 +9,16 @@ import (
 
 const CreatePlayerHandlerCmdID = "CreatePlayer"
 
-type CreatePlayerHandler struct {
-	pr player.Repository
+type CreatePlayer struct {
+	PlayerID, Name string
 }
 
-func (cph *CreatePlayerHandler) CmdID() string {
+func (cpc *CreatePlayer) CmdID() string {
 	return CreatePlayerHandlerCmdID
+}
+
+type CreatePlayerHandler struct {
+	pr player.Repository
 }
 
 func NewCreatePlayerHandler(pr player.Repository) *CreatePlayerHandler {
@@ -23,11 +27,7 @@ func NewCreatePlayerHandler(pr player.Repository) *CreatePlayerHandler {
 	}
 }
 
-type CreatePlayer struct {
-	PlayerID, Name string
-}
-
-func (cpc *CreatePlayer) CmdID() string {
+func (cph *CreatePlayerHandler) CmdID() string {
 	return CreatePlayerHandlerCmdID
 }
 
