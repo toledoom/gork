@@ -66,13 +66,16 @@ func SetupCommandHandlers(container *di.Container) []cqrs.CommandHandler {
 	return commandHandlerList
 }
 
-func SetupQueryHandlers(container *di.Container) []cqrs.QueryHandler {
-	queryHandlerList := []cqrs.QueryHandler{
-		query.NewGetRankHandler(di.GetService[leaderboarddomain.Ranking](container)),
-		query.NewGetTopPlayersHandler(di.GetService[leaderboarddomain.Ranking](container)),
-	}
-
-	return queryHandlerList
+func SetupQueryHandlers(container *di.Container, qr *cqrs.QueryRegistry) {
+	cqrs.RegisterQueryHandler[*query.GetRank, *query.GetRankResponse](
+		qr, query.GetRankHandler(di.GetService[leaderboarddomain.Ranking](container)),
+	)
+	cqrs.RegisterQueryHandler[*query.GetTopPlayers, *query.GetTopPlayersResponse](
+		qr, query.GetTopPlayersHandler(di.GetService[leaderboarddomain.Ranking](container)),
+	)
+	cqrs.RegisterQueryHandler[*query.GetPlayerByID, *query.GetPlayerByIDResponse](
+		qr, query.GetPlayerByIDHandler(di.GetService[playerdomain.Repository](container)),
+	)
 }
 
 func SetupDataMapper(dataMapper *persistence.DataMapper, container *di.Container) {

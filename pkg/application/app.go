@@ -18,8 +18,8 @@ type App struct {
 	dataMapper     *persistence.DataMapper
 	eventPublisher *event.Publisher
 
-	commandBus *cqrs.CommandBus
-	queryBus   *cqrs.QueryBus
+	commandBus    *cqrs.CommandBus
+	queryRegistry *cqrs.QueryRegistry
 
 	commandHandlersSetup CommandHandlersSetup
 	queryHandlersSetup   QueryHandlersSetup
@@ -46,10 +46,10 @@ func (app *App) Start(servicesSetup ServicesSetup, dataMapperSetup DataMapperSet
 
 	dataMapperSetup(app.dataMapper, app.container)
 	eventPublisherSetup(app.eventPublisher, app.container)
-	// app.container.Add("event-publisher", func() any { return app.eventPublisher })
 	di.AddService[*event.Publisher](app.container, func(*di.Container) *event.Publisher { return event.NewPublisher() })
 
-	app.queryBus = cqrs.NewQueryBus(app.queryHandlersSetup(app.container))
+	app.queryRegistry = cqrs.NewQueryRegistry()
+	app.queryHandlersSetup(app.container, app.queryRegistry)
 	app.commandBus = cqrs.NewCommandBus(app.commandHandlersSetup(app.container))
 }
 
@@ -57,8 +57,8 @@ func (app *App) HandleCommand(c cqrs.Command) error {
 	return app.commandBus.Handle(c)
 }
 
-func (app *App) HandleQuery(q cqrs.Query) (cqrs.QueryResponse[any], error) {
-	return app.queryBus.Handle(q)
+func (app *App) HandleQuery(q any) (any, error) {
+	return cqrs.HandleQuery[any, any](app.queryRegistry, q)
 }
 
 func (app *App) GrpcServer(options ...grpc.ServerOption) *grpc.Server {

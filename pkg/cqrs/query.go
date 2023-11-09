@@ -1,33 +1,25 @@
 package cqrs
 
-type Query interface {
-	QueryID() string
+import "reflect"
+
+type QueryHandler[T, R any] func(T) (R, error)
+
+type QueryRegistry struct {
+	queryHandlers map[string]any
 }
 
-type QueryHandler interface {
-	Handle(c Query) (QueryResponse[any], error)
-	QueryID() string
-}
-
-type QueryResponse[T any] interface {
-	Data() T
-}
-
-type QueryBus struct {
-	queries map[string]QueryHandler
-}
-
-func NewQueryBus(queryHandlerList []QueryHandler) *QueryBus {
-	queryHandlerMap := make(map[string]QueryHandler)
-	for _, qh := range queryHandlerList {
-		queryHandlerMap[qh.QueryID()] = qh
-	}
-	return &QueryBus{
-		queries: queryHandlerMap,
+func NewQueryRegistry() *QueryRegistry {
+	return &QueryRegistry{
+		queryHandlers: make(map[string]any),
 	}
 }
 
-func (qb *QueryBus) Handle(q Query) (QueryResponse[any], error) {
-	qh := qb.queries[q.QueryID()]
-	return qh.Handle(q)
+func RegisterQueryHandler[T, R any](qr *QueryRegistry, qh QueryHandler[T, R]) {
+	var t T
+	qr.queryHandlers[reflect.TypeOf(t).String()] = qh
+}
+
+func HandleQuery[T, R any](qr *QueryRegistry, q T) (R, error) {
+	qh := qr.queryHandlers[reflect.TypeOf(q).String()].(QueryHandler[T, R])
+	return qh(q)
 }

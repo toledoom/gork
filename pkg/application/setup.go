@@ -9,6 +9,6 @@ import (
 
 type ServicesSetup func(container *di.Container)
 type CommandHandlersSetup func(container *di.Container) []cqrs.CommandHandler
-type QueryHandlersSetup func(container *di.Container) []cqrs.QueryHandler
+type QueryHandlersSetup func(container *di.Container, queryRegistry *cqrs.QueryRegistry)
 type DataMapperSetup func(datamapper *persistence.DataMapper, container *di.Container)
 type EventPublisherSetup func(eventPublisher *event.Publisher, container *di.Container)

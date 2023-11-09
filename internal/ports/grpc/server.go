@@ -70,7 +70,7 @@ func (s *GameServer) GetRank(ctx context.Context, grr *leaderboard.GetRankReques
 	if err != nil {
 		return nil, err
 	}
-	getRankResponse := response.Data().(*query.GetRankResponse)
+	getRankResponse := response.(*query.GetRankResponse)
 
 	return &leaderboard.GetRankResponse{
 		Rank: getRankResponse.Rank,
@@ -85,7 +85,7 @@ func (s *GameServer) GetTopPlayers(ctx context.Context, gtp *leaderboard.GetTopP
 	if err != nil {
 		return nil, err
 	}
-	getTopPlayersResponse := response.Data().(*leaderboard.GetTopPlayersResponse)
+	getTopPlayersResponse := response.(*leaderboard.GetTopPlayersResponse)
 	return &leaderboard.GetTopPlayersResponse{
 		MemberList: getTopPlayersResponse.MemberList,
 	}, err
@@ -112,7 +112,7 @@ func (s *GameServer) GetPlayerById(ctx context.Context, cpr *player.GetPlayerByI
 	if err != nil {
 		return nil, err
 	}
-	getPlayerByIDResponse := queryResponse.Data().(*player.GetPlayerByIdResponse)
+	getPlayerByIDResponse := queryResponse.(*player.GetPlayerByIdResponse)
 
 	return &player.GetPlayerByIdResponse{
 		Name:  getPlayerByIDResponse.Name,
