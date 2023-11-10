@@ -18,8 +18,8 @@ type App struct {
 	dataMapper     *persistence.DataMapper
 	eventPublisher *event.Publisher
 
-	commandBus    *cqrs.CommandBus
-	queryRegistry *cqrs.QueryRegistry
+	commandRegistry *cqrs.CommandRegistry
+	queryRegistry   *cqrs.QueryRegistry
 
 	commandHandlersSetup CommandHandlersSetup
 	queryHandlersSetup   QueryHandlersSetup
@@ -50,15 +50,16 @@ func (app *App) Start(servicesSetup ServicesSetup, dataMapperSetup DataMapperSet
 
 	app.queryRegistry = cqrs.NewQueryRegistry()
 	app.queryHandlersSetup(app.container, app.queryRegistry)
-	app.commandBus = cqrs.NewCommandBus(app.commandHandlersSetup(app.container))
+	app.commandRegistry = cqrs.NewCommandRegistry()
+	app.commandHandlersSetup(app.container, app.commandRegistry)
 }
 
-func (app *App) HandleCommand(c cqrs.Command) error {
-	return app.commandBus.Handle(c)
+func HandleCommand[T any](app *App, c T) error {
+	return cqrs.HandleCommand[T](app.commandRegistry, c)
 }
 
-func (app *App) HandleQuery(q any) (any, error) {
-	return cqrs.HandleQuery[any, any](app.queryRegistry, q)
+func HandleQuery[Q, R any](app *App, q Q) (R, error) {
+	return cqrs.HandleQuery[Q, R](app.queryRegistry, q)
 }
 
 func (app *App) GrpcServer(options ...grpc.ServerOption) *grpc.Server {

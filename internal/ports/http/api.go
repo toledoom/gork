@@ -23,7 +23,6 @@ func NewApi(app *application.App) *Api {
 }
 
 // TODO: Implement the actual handlers
-// Create the http requests and responses for each handler
 // ////////////////////////////////////
 func (api *Api) StartBattleHandler(w http.ResponseWriter, r *http.Request) {
 	battleID := uuid.New().String()
@@ -41,7 +40,7 @@ func (api *Api) StartBattleHandler(w http.ResponseWriter, r *http.Request) {
 		Player2ID: startBattleReq.PlayerId2,
 	}
 
-	err = api.app.HandleCommand(c)
+	err = application.HandleCommand[*command.StartBattle](api.app, c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

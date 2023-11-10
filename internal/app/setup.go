@@ -52,18 +52,23 @@ func SetupServices(container *di.Container) {
 	})
 }
 
-func SetupCommandHandlers(container *di.Container) []cqrs.CommandHandler {
-	commandHandlerList := []cqrs.CommandHandler{
-		command.NewCreatePlayerHandler(di.GetService[playerdomain.Repository](container)),
-		command.NewStartBattleHandler(di.GetService[battledomain.Repository](container)),
-		command.NewFinishBattleHandler(
+func SetupCommandHandlers(container *di.Container, cr *cqrs.CommandRegistry) {
+	cqrs.RegisterCommandHandler[*command.CreatePlayer](
+		cr, command.CreatePlayerHandler(di.GetService[playerdomain.Repository](container)),
+	)
+	cqrs.RegisterCommandHandler[*command.StartBattle](
+		cr, command.StartBattleHandler(
+			di.GetService[battledomain.Repository](container),
+			di.GetService[playerdomain.Repository](container),
+		),
+	)
+	cqrs.RegisterCommandHandler[*command.FinishBattle](
+		cr, command.FinishBattleHandler(
 			di.GetService[battledomain.Repository](container),
 			di.GetService[playerdomain.Repository](container),
 			di.GetService[battledomain.ScoreCalculator](container),
 		),
-	}
-
-	return commandHandlerList
+	)
 }
 
 func SetupQueryHandlers(container *di.Container, qr *cqrs.QueryRegistry) {

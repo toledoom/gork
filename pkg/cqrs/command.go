@@ -1,29 +1,25 @@
 package cqrs
 
-type Command interface {
-	CmdID() string
+import "reflect"
+
+type CommandHandler[T any] func(T) error
+
+type CommandRegistry struct {
+	commandHandlers map[string]any
 }
 
-type CommandHandler interface {
-	Handle(c Command) error
-	CmdID() string
-}
-
-type CommandBus struct {
-	commands map[string]CommandHandler
-}
-
-func NewCommandBus(commandHandlerList []CommandHandler) *CommandBus {
-	commandMap := make(map[string]CommandHandler)
-	for _, ch := range commandHandlerList {
-		commandMap[ch.CmdID()] = ch
-	}
-	return &CommandBus{
-		commands: commandMap,
+func NewCommandRegistry() *CommandRegistry {
+	return &CommandRegistry{
+		commandHandlers: make(map[string]any),
 	}
 }
 
-func (cb *CommandBus) Handle(c Command) error {
-	ch := cb.commands[c.CmdID()]
-	return ch.Handle(c)
+func RegisterCommandHandler[T any](cr *CommandRegistry, ch CommandHandler[T]) {
+	var t T
+	cr.commandHandlers[reflect.TypeOf(t).String()] = ch
+}
+
+func HandleCommand[T any](cr *CommandRegistry, c T) error {
+	ch := cr.commandHandlers[reflect.TypeOf(c).String()].(CommandHandler[T])
+	return ch(c)
 }

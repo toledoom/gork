@@ -1,77 +1,47 @@
 package command
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/toledoom/gork/internal/domain/battle"
 	"github.com/toledoom/gork/internal/domain/player"
-	"github.com/toledoom/gork/pkg/cqrs"
 )
-
-const FinishBattleCmdID = "FinishBattle"
 
 type FinishBattle struct {
 	BattleID, WinnerID string
 }
 
-func (fb *FinishBattle) CmdID() string {
-	return FinishBattleCmdID
-}
+func FinishBattleHandler(br battle.Repository, pr player.Repository, calc battle.ScoreCalculator) func(c *FinishBattle) error {
+	return func(c *FinishBattle) error {
+		battleID := c.BattleID
+		winnerID := c.WinnerID
+		finishedAt := time.Now().UTC()
+		b, err := br.GetByID(battleID)
+		if err != nil {
+			return err
+		}
+		b.Finish(battleID, winnerID, finishedAt, calc)
 
-type FinishBattleHandler struct {
-	br battle.Repository
-	pr player.Repository
-	c  battle.ScoreCalculator
-}
+		player1ID := b.Player1ID
+		player2ID := b.Player2ID
+		player1, err := pr.GetByID(player1ID)
+		if err != nil {
+			return err
+		}
+		player2, err := pr.GetByID(player2ID)
+		if err != nil {
+			return err
+		}
 
-func NewFinishBattleHandler(br battle.Repository,
-	pr player.Repository,
-	c battle.ScoreCalculator) *FinishBattleHandler {
-	return &FinishBattleHandler{
-		br: br,
-		pr: pr,
-		c:  c,
-	}
-}
+		err = pr.Update(player1)
+		if err != nil {
+			return err
+		}
+		err = pr.Update(player2)
+		if err != nil {
+			return err
+		}
 
-func (fbh *FinishBattleHandler) CmdID() string {
-	return FinishBattleCmdID
-}
-
-func (fbh FinishBattleHandler) Handle(c cqrs.Command) error {
-	fbc, ok := c.(*FinishBattle)
-	if !ok {
-		return fmt.Errorf("wrong command: %v", c)
+		return nil
 	}
-	battleID := fbc.BattleID
-	winnerID := fbc.WinnerID
-	finishedAt := time.Now().UTC()
-	b, err := fbh.br.GetByID(battleID)
-	if err != nil {
-		return err
-	}
-	b.Finish(battleID, winnerID, finishedAt, fbh.c)
-
-	player1ID := b.Player1ID
-	player2ID := b.Player2ID
-	player1, err := fbh.pr.GetByID(player1ID)
-	if err != nil {
-		return err
-	}
-	player2, err := fbh.pr.GetByID(player2ID)
-	if err != nil {
-		return err
-	}
-
-	err = fbh.pr.Update(player1)
-	if err != nil {
-		return err
-	}
-	err = fbh.pr.Update(player2)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

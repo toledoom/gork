@@ -4,8 +4,6 @@ import (
 	"github.com/toledoom/gork/internal/domain/player"
 )
 
-const GetPlayerByIDQueryID = "GetPlayerByID"
-
 type GetPlayerByID struct {
 	PlayerID string
 }

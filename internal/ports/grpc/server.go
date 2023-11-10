@@ -34,7 +34,7 @@ func (s *GameServer) StartBattle(ctx context.Context, sbr *battle.StartBattleReq
 		Player2ID: sbr.PlayerId2,
 	}
 
-	err := s.app.HandleCommand(c)
+	err := application.HandleCommand[*command.StartBattle](s.app, c)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (s *GameServer) FinishBattle(ctx context.Context, fbr *battle.FinishBattleR
 		WinnerID: fbr.WinnerId,
 	}
 
-	err := s.app.HandleCommand(c)
+	err := application.HandleCommand[*command.FinishBattle](s.app, c)
 	if err != nil {
 		return nil, err
 	}
@@ -66,11 +66,10 @@ func (s *GameServer) GetRank(ctx context.Context, grr *leaderboard.GetRankReques
 		PlayerID: grr.PlayerId,
 	}
 
-	response, err := s.app.HandleQuery(q)
+	getRankResponse, err := application.HandleQuery[*query.GetRank, *query.GetRankResponse](s.app, q)
 	if err != nil {
 		return nil, err
 	}
-	getRankResponse := response.(*query.GetRankResponse)
 
 	return &leaderboard.GetRankResponse{
 		Rank: getRankResponse.Rank,
@@ -81,13 +80,22 @@ func (s *GameServer) GetTopPlayers(ctx context.Context, gtp *leaderboard.GetTopP
 	q := &query.GetTopPlayers{
 		NumPlayers: gtp.NumPlayers,
 	}
-	response, err := s.app.HandleQuery(q)
+	getTopPlayersResponse, err := application.HandleQuery[*query.GetTopPlayers, *query.GetTopPlayersResponse](s.app, q)
 	if err != nil {
 		return nil, err
 	}
-	getTopPlayersResponse := response.(*leaderboard.GetTopPlayersResponse)
+
+	var protoMemberList []*leaderboard.Member
+	for _, m := range getTopPlayersResponse.MemberList {
+		protoMember := &leaderboard.Member{
+			Id:    m.PlayerID,
+			Score: m.Score,
+		}
+		protoMemberList = append(protoMemberList, protoMember)
+	}
+
 	return &leaderboard.GetTopPlayersResponse{
-		MemberList: getTopPlayersResponse.MemberList,
+		MemberList: protoMemberList,
 	}, err
 }
 
@@ -96,7 +104,7 @@ func (s *GameServer) CreatePlayer(ctx context.Context, cpr *player.CreatePlayerR
 		PlayerID: cpr.Id,
 		Name:     cpr.Name,
 	}
-	err := s.app.HandleCommand(c)
+	err := application.HandleCommand[*command.CreatePlayer](s.app, c)
 	if err != nil {
 		return nil, err
 	}
@@ -108,14 +116,13 @@ func (s *GameServer) GetPlayerById(ctx context.Context, cpr *player.GetPlayerByI
 	q := &query.GetPlayerByID{
 		PlayerID: cpr.Id,
 	}
-	queryResponse, err := s.app.HandleQuery(q)
+	getPlayerByIDResponse, err := application.HandleQuery[*query.GetPlayerByID, *query.GetPlayerByIDResponse](s.app, q)
 	if err != nil {
 		return nil, err
 	}
-	getPlayerByIDResponse := queryResponse.(*player.GetPlayerByIdResponse)
 
 	return &player.GetPlayerByIdResponse{
-		Name:  getPlayerByIDResponse.Name,
-		Score: getPlayerByIDResponse.Score,
+		Name:  getPlayerByIDResponse.Player.Name,
+		Score: getPlayerByIDResponse.Player.Score,
 	}, err
 }
