@@ -6,7 +6,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/toledoom/gork/internal/app/command"
+	"github.com/toledoom/gork/internal/app/query"
 	"github.com/toledoom/gork/internal/ports/grpc/proto/battle"
+	"github.com/toledoom/gork/internal/ports/grpc/proto/leaderboard"
+	"github.com/toledoom/gork/internal/ports/grpc/proto/player"
 	"github.com/toledoom/gork/pkg/application"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -45,36 +48,137 @@ func (api *Api) StartBattleHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (api *Api) FinishBattleHandler(w http.ResponseWriter, r *http.Request) {
-	// w.Header().Set("Content-Type", "application/json")
-	// w.WriteHeader(http.StatusCreated)
-	// json.NewEncoder(w).Encode(data)
+	httpReq := &battle.FinishBattleRequest{}
+	finishBattleReq, err := decodeHttpRequest[*battle.FinishBattleRequest](r, w, httpReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	c := &command.FinishBattle{
+		BattleID: finishBattleReq.BattleId,
+		WinnerID: finishBattleReq.WinnerId,
+	}
+
+	err = application.HandleCommand[*command.FinishBattle](api.app, c)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	resp := &battle.FinishBattleResponse{
+		Player1Score: 0, // TODO: Get the score using a query
+		Player2Score: 0, // TODO: Get the score using a query
+	}
+	marshalledResp, _ := protojson.Marshal(resp)
+	w.Write(marshalledResp)
 }
 
 func (api *Api) GetRankHandler(w http.ResponseWriter, r *http.Request) {
-	// w.Header().Set("Content-Type", "application/json")
-	// w.WriteHeader(http.StatusCreated)
-	// json.NewEncoder(w).Encode(data)
+	httpReq := &leaderboard.GetRankRequest{}
+	getRankReq, err := decodeHttpRequest[*leaderboard.GetRankRequest](r, w, httpReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	q := &query.GetRank{
+		PlayerID: getRankReq.PlayerId,
+	}
+
+	getRankResponse, err := application.HandleQuery[*query.GetRank, *query.GetRankResponse](api.app, q)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	resp := &leaderboard.GetRankResponse{
+		Rank: getRankResponse.Rank,
+	}
+	marshalledResp, _ := protojson.Marshal(resp)
+	w.Write(marshalledResp)
 }
 
 func (api *Api) GetTopPlayersHandler(w http.ResponseWriter, r *http.Request) {
-	// w.Header().Set("Content-Type", "application/json")
-	// w.WriteHeader(http.StatusCreated)
-	// json.NewEncoder(w).Encode(data)
+	httpReq := &leaderboard.GetTopPlayersRequest{}
+	getTopPlayersReq, err := decodeHttpRequest[*leaderboard.GetTopPlayersRequest](r, w, httpReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	q := &query.GetTopPlayers{
+		NumPlayers: getTopPlayersReq.NumPlayers,
+	}
+
+	getTopPlayersResponse, err := application.HandleQuery[*query.GetTopPlayers, *query.GetTopPlayersResponse](api.app, q)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var memberList []*leaderboard.Member
+	for _, m := range getTopPlayersResponse.MemberList {
+		member := &leaderboard.Member{
+			Id:    m.PlayerID,
+			Score: m.Score,
+		}
+		memberList = append(memberList, member)
+	}
+	resp := &leaderboard.GetTopPlayersResponse{
+		MemberList: memberList,
+	}
+	marshalledResp, _ := protojson.Marshal(resp)
+	w.Write(marshalledResp)
 }
 
 func (api *Api) CreatePlayerHandler(w http.ResponseWriter, r *http.Request) {
-	// w.Header().Set("Content-Type", "application/json")
-	// w.WriteHeader(http.StatusCreated)
-	// json.NewEncoder(w).Encode(data)
+	httpReq := &player.CreatePlayerRequest{}
+	createPlayerReq, err := decodeHttpRequest[*player.CreatePlayerRequest](r, w, httpReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	c := &command.CreatePlayer{
+		PlayerID: createPlayerReq.Id,
+		Name:     createPlayerReq.Name,
+	}
+
+	err = application.HandleCommand[*command.CreatePlayer](api.app, c)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	marshalledResp, _ := protojson.Marshal(&player.CreatePlayerResponse{})
+	w.Write(marshalledResp)
 }
 
 func (api *Api) GetPlayerByIDHandler(w http.ResponseWriter, r *http.Request) {
-	// w.Header().Set("Content-Type", "application/json")
-	// w.WriteHeader(http.StatusCreated)
-	// json.NewEncoder(w).Encode(data)
+	httpReq := &player.GetPlayerByIdRequest{}
+	getPlayerByIDReq, err := decodeHttpRequest[*player.GetPlayerByIdRequest](r, w, httpReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	q := &query.GetPlayerByID{
+		PlayerID: getPlayerByIDReq.Id,
+	}
+
+	getPlayerByIDResponse, err := application.HandleQuery[*query.GetPlayerByID, *query.GetPlayerByIDResponse](api.app, q)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	resp := &player.GetPlayerByIdResponse{
+		Name:  getPlayerByIDResponse.Player.Name,
+		Score: getPlayerByIDResponse.Player.Score,
+	}
+	marshalledResp, _ := protojson.Marshal(resp)
+	w.Write(marshalledResp)
 }
 
 func decodeHttpRequest[T protoreflect.ProtoMessage](r *http.Request, w http.ResponseWriter, httpReq T) (T, error) {

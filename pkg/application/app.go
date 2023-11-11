@@ -70,12 +70,12 @@ func (app *App) GrpcServer(options ...grpc.ServerOption) *grpc.Server {
 	return s
 }
 
-func (app *App) HttpMiddleware(h http.Handler) http.Handler {
+func (app *App) httpMiddleware(h http.Handler) http.Handler {
 	middleware := httpgork.WithCommitAndNotifyMiddleware(app.container)
 	return middleware(h)
 }
 
 func (app *App) HttpListenAndServe(port string, h http.Handler) error {
-	gorkHandler := app.HttpMiddleware(h)
+	gorkHandler := app.httpMiddleware(h)
 	return http.ListenAndServe(port, gorkHandler)
 }
