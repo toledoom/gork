@@ -11,11 +11,22 @@ const (
 	CreationQuery = iota
 	UpdateQuery
 	DeletionQuery
+	FetchOneQUery
+	FetchManyQuery
 )
+
+type PersistenceFn func(e entity.Entity) error
+type FetchFn func(id string) (entity.Entity, error)
 
 type StorageMapper struct {
 	persistenceFns map[string]PersistenceFn
 	fetchFns       map[string]FetchFn
+}
+
+func NewStorageMapper() *StorageMapper {
+	return &StorageMapper{
+		persistenceFns: make(map[string]PersistenceFn),
+	}
 }
 
 func (sm *StorageMapper) AddPersistenceFn(t reflect.Type, entityType int, fn PersistenceFn) {
@@ -32,13 +43,4 @@ func (sm *StorageMapper) AddFetchFn(t reflect.Type, fn FetchFn) {
 
 func (sm *StorageMapper) GetFetchFn(t reflect.Type) FetchFn {
 	return sm.fetchFns[t.String()]
-}
-
-type PersistenceFn func(e entity.Entity) error
-type FetchFn func(id string) (entity.Entity, error)
-
-func NewStorageMapper() *StorageMapper {
-	return &StorageMapper{
-		persistenceFns: make(map[string]PersistenceFn),
-	}
 }
