@@ -28,7 +28,8 @@ type App struct {
 func New(commandHandlersSetup CommandHandlersSetup, queryHandlersSetup QueryHandlersSetup) *App {
 	container := di.NewContainer()
 	dataMapper := persistence.NewStorageMapper()
-	eventPublisher := event.NewPublisher()
+	di.AddService[*event.Publisher](container, func(*di.Container) *event.Publisher { return event.NewPublisher() })
+	eventPublisher := di.GetService[*event.Publisher](container)
 
 	return &App{
 		container:      container,
@@ -46,7 +47,6 @@ func (app *App) Start(servicesSetup ServicesSetup, dataMapperSetup DataMapperSet
 
 	dataMapperSetup(app.dataMapper, app.container)
 	eventPublisherSetup(app.eventPublisher, app.container)
-	di.AddService[*event.Publisher](app.container, func(*di.Container) *event.Publisher { return event.NewPublisher() })
 
 	app.queryRegistry = cqrs.NewQueryRegistry()
 	app.queryHandlersSetup(app.container, app.queryRegistry)
