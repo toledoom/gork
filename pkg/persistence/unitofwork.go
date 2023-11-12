@@ -49,7 +49,7 @@ func (uow *UnitOfWork) FetchByID(t reflect.Type, id string) (entity.Entity, erro
 
 func (uow *UnitOfWork) Commit() error {
 	for _, en := range uow.newEntities {
-		fn := uow.dataMapper.GetPersistenceFn(reflect.TypeOf(en), EntityNew)
+		fn := uow.dataMapper.GetPersistenceFn(reflect.TypeOf(en), CreationQuery)
 		err := fn(en)
 		if err != nil {
 			return nil
@@ -57,7 +57,7 @@ func (uow *UnitOfWork) Commit() error {
 	}
 
 	for _, en := range uow.dirtyEntities {
-		fn := uow.dataMapper.GetPersistenceFn(reflect.TypeOf(en), EntityDirty)
+		fn := uow.dataMapper.GetPersistenceFn(reflect.TypeOf(en), UpdateQuery)
 		err := fn(en)
 		if err != nil {
 			return nil
@@ -65,7 +65,7 @@ func (uow *UnitOfWork) Commit() error {
 	}
 
 	for _, en := range uow.deletedEntities {
-		fn := uow.dataMapper.GetPersistenceFn(reflect.TypeOf(en), EntityDeleted)
+		fn := uow.dataMapper.GetPersistenceFn(reflect.TypeOf(en), DeletionQuery)
 		err := fn(en)
 		if err != nil {
 			return nil

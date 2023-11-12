@@ -84,13 +84,13 @@ func SetupQueryHandlers(container *di.Container, qr *cqrs.QueryRegistry) {
 }
 
 func SetupDataMapper(dataMapper *persistence.StorageMapper, container *di.Container) {
-	dataMapper.AddPersistenceFn(reflect.TypeOf(battledomain.Battle{}), persistence.EntityNew, func(e entity.Entity) error {
+	dataMapper.AddPersistenceFn(reflect.TypeOf(battledomain.Battle{}), persistence.CreationQuery, func(e entity.Entity) error {
 		b := e.(*battledomain.Battle)
 		bdr := battle.NewDynamoStorage(di.GetService[*dynamodb.Client](container))
 		return bdr.Add(b)
 	})
 
-	dataMapper.AddPersistenceFn(reflect.TypeOf(battledomain.Battle{}), persistence.EntityDirty, func(e entity.Entity) error {
+	dataMapper.AddPersistenceFn(reflect.TypeOf(battledomain.Battle{}), persistence.UpdateQuery, func(e entity.Entity) error {
 		b := e.(*battledomain.Battle)
 		bdr := battle.NewDynamoStorage(di.GetService[*dynamodb.Client](container))
 		return bdr.Update(b)

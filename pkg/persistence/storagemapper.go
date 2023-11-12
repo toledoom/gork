@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	EntityNew = iota
-	EntityDirty
-	EntityDeleted
+	CreationQuery = iota
+	UpdateQuery
+	DeletionQuery
 )
 
 type StorageMapper struct {
