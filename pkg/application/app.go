@@ -15,7 +15,7 @@ import (
 
 type App struct {
 	container      *di.Container
-	dataMapper     *persistence.DataMapper
+	dataMapper     *persistence.StorageMapper
 	eventPublisher *event.Publisher
 
 	commandRegistry *cqrs.CommandRegistry
@@ -27,7 +27,7 @@ type App struct {
 
 func New(commandHandlersSetup CommandHandlersSetup, queryHandlersSetup QueryHandlersSetup) *App {
 	container := di.NewContainer()
-	dataMapper := persistence.NewDataMapper()
+	dataMapper := persistence.NewStorageMapper()
 	eventPublisher := event.NewPublisher()
 
 	return &App{

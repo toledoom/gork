@@ -18,10 +18,10 @@ type Worker interface {
 
 type UnitOfWork struct {
 	newEntities, dirtyEntities, deletedEntities []entity.Entity
-	dataMapper                                  *DataMapper
+	dataMapper                                  *StorageMapper
 }
 
-func NewUnitOfWork(datamapper *DataMapper) *UnitOfWork {
+func NewUnitOfWork(datamapper *StorageMapper) *UnitOfWork {
 	return &UnitOfWork{
 		dataMapper: datamapper,
 	}

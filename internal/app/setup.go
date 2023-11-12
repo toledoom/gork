@@ -83,7 +83,7 @@ func SetupQueryHandlers(container *di.Container, qr *cqrs.QueryRegistry) {
 	)
 }
 
-func SetupDataMapper(dataMapper *persistence.DataMapper, container *di.Container) {
+func SetupDataMapper(dataMapper *persistence.StorageMapper, container *di.Container) {
 	dataMapper.AddPersistenceFn(reflect.TypeOf(battledomain.Battle{}), persistence.EntityNew, func(e entity.Entity) error {
 		b := e.(*battledomain.Battle)
 		bdr := battle.NewDynamoStorage(di.GetService[*dynamodb.Client](container))
