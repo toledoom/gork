@@ -102,7 +102,7 @@ func (ur *UowRepository) Delete(p *domain.Player) error {
 }
 
 func (ur *UowRepository) GetByID(id string) (*domain.Player, error) {
-	entity, err := ur.uow.FetchByID(reflect.TypeOf(&domain.Player{}), id)
+	entity, err := ur.uow.FetchOne(reflect.TypeOf(&domain.Player{}), id)
 	if err != nil {
 		return nil, err
 	}

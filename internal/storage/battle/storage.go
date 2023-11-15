@@ -100,7 +100,7 @@ func (ur *UowRepository) Update(b *domain.Battle) error {
 }
 
 func (ur *UowRepository) GetByID(id string) (*domain.Battle, error) {
-	entity, err := ur.uow.FetchByID(reflect.TypeOf(&domain.Battle{}), id)
+	entity, err := ur.uow.FetchOne(reflect.TypeOf(&domain.Battle{}), id)
 	if err != nil {
 		return nil, err
 	}

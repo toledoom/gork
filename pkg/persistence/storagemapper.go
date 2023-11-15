@@ -16,16 +16,20 @@ const (
 )
 
 type PersistenceFn func(e entity.Entity) error
-type FetchFn func(id string) (entity.Entity, error)
+type FetchOneFn func(id string) (entity.Entity, error)
+type FetchManyFn func(filters ...Filter) ([]entity.Entity, error)
 
 type StorageMapper struct {
 	persistenceFns map[string]PersistenceFn
-	fetchFns       map[string]FetchFn
+	fetchOneFns    map[string]FetchOneFn
+	fetchManyFns   map[string]FetchManyFn
 }
 
 func NewStorageMapper() *StorageMapper {
 	return &StorageMapper{
 		persistenceFns: make(map[string]PersistenceFn),
+		fetchOneFns:    make(map[string]FetchOneFn),
+		fetchManyFns:   make(map[string]FetchManyFn),
 	}
 }
 
@@ -37,10 +41,18 @@ func (sm *StorageMapper) GetPersistenceFn(t reflect.Type, entityType int) Persis
 	return sm.persistenceFns[fmt.Sprintf("%s-%d", t.String(), entityType)]
 }
 
-func (sm *StorageMapper) AddFetchFn(t reflect.Type, fn FetchFn) {
-	sm.fetchFns[t.String()] = fn
+func (sm *StorageMapper) AddFetchOneFn(t reflect.Type, fn FetchOneFn) {
+	sm.fetchOneFns[t.String()] = fn
 }
 
-func (sm *StorageMapper) GetFetchFn(t reflect.Type) FetchFn {
-	return sm.fetchFns[t.String()]
+func (sm *StorageMapper) GetFetchOneFn(t reflect.Type) FetchOneFn {
+	return sm.fetchOneFns[t.String()]
+}
+
+func (sm *StorageMapper) AddFetchManyFn(t reflect.Type, fn FetchManyFn) {
+	sm.fetchManyFns[t.String()] = fn
+}
+
+func (sm *StorageMapper) GetFetchManyFn(t reflect.Type) FetchManyFn {
+	return sm.fetchManyFns[t.String()]
 }

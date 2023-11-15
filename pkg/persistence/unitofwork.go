@@ -11,9 +11,14 @@ type Worker interface {
 	RegisterNew(newEntity entity.Entity) error
 	RegisterDirty(modifiedEntity entity.Entity) error
 	RegisterDeleted(deletedEntity entity.Entity) error
-	FetchByID(t reflect.Type, id string) (entity.Entity, error)
+	FetchOne(t reflect.Type, id string) (entity.Entity, error)
+	FetchMany(t reflect.Type, filters ...Filter) ([]entity.Entity, error)
 	Commit() error
 	DomainEvents() []event.Event
+}
+
+type Filter interface { // TODO: Think about implementations of actual filters
+	Condition() bool
 }
 
 type UnitOfWork struct {
@@ -42,9 +47,14 @@ func (uow *UnitOfWork) RegisterDeleted(deletedEntity entity.Entity) error {
 	return nil
 }
 
-func (uow *UnitOfWork) FetchByID(t reflect.Type, id string) (entity.Entity, error) {
-	fn := uow.dataMapper.GetFetchFn(t)
+func (uow *UnitOfWork) FetchOne(t reflect.Type, id string) (entity.Entity, error) {
+	fn := uow.dataMapper.GetFetchOneFn(t)
 	return fn(id)
+}
+
+func (uow *UnitOfWork) FetchMany(t reflect.Type, filters ...Filter) ([]entity.Entity, error) {
+	fn := uow.dataMapper.GetFetchManyFn(t)
+	return fn(filters...)
 }
 
 func (uow *UnitOfWork) Commit() error {
