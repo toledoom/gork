@@ -15,7 +15,7 @@ import (
 
 type App struct {
 	container      *di.Container
-	dataMapper     *persistence.StorageMapper
+	storageMapper  *persistence.StorageMapper
 	eventPublisher *event.Publisher
 
 	commandRegistry *cqrs.CommandRegistry
@@ -27,13 +27,13 @@ type App struct {
 
 func New(commandHandlersSetup CommandHandlersSetup, queryHandlersSetup QueryHandlersSetup) *App {
 	container := di.NewContainer()
-	dataMapper := persistence.NewStorageMapper()
+	storageMapper := persistence.NewStorageMapper()
 	di.AddService[*event.Publisher](container, func(*di.Container) *event.Publisher { return event.NewPublisher() })
 	eventPublisher := di.GetService[*event.Publisher](container)
 
 	return &App{
 		container:      container,
-		dataMapper:     dataMapper,
+		storageMapper:  storageMapper,
 		eventPublisher: eventPublisher,
 
 		commandHandlersSetup: commandHandlersSetup,
@@ -43,9 +43,9 @@ func New(commandHandlersSetup CommandHandlersSetup, queryHandlersSetup QueryHand
 
 func (app *App) Start(servicesSetup ServicesSetup, dataMapperSetup DataMapperSetup, eventPublisherSetup EventPublisherSetup) {
 	servicesSetup(app.container)
-	di.AddService[persistence.Worker](app.container, func(*di.Container) persistence.Worker { return persistence.NewUnitOfWork(app.dataMapper) })
+	di.AddService[persistence.Worker](app.container, func(*di.Container) persistence.Worker { return persistence.NewUnitOfWork(app.storageMapper) })
 
-	dataMapperSetup(app.dataMapper, app.container)
+	dataMapperSetup(app.storageMapper, app.container)
 	eventPublisherSetup(app.eventPublisher, app.container)
 
 	app.queryRegistry = cqrs.NewQueryRegistry()

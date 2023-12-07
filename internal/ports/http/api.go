@@ -25,8 +25,6 @@ func NewApi(app *application.App) *Api {
 	}
 }
 
-// TODO: Implement the actual handlers
-// ////////////////////////////////////
 func (api *Api) StartBattleHandler(w http.ResponseWriter, r *http.Request) {
 	battleID := uuid.New().String()
 
