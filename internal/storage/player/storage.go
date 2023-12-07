@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	domain "github.com/toledoom/gork/internal/domain/player"
+	"github.com/toledoom/gork/pkg/entity"
 	"github.com/toledoom/gork/pkg/persistence"
 )
 
@@ -25,7 +26,7 @@ func NewDynamoStorage(d *dynamodb.Client) *DynamoStorage {
 	}
 }
 
-func (pr *DynamoStorage) GetByID(id string) (*domain.Player, error) {
+func (pr *DynamoStorage) GetByID(id string) (entity.Entity, error) {
 	getItemInput := &dynamodb.GetItemInput{
 		Key: map[string]types.AttributeValue{
 			"ID": &types.AttributeValueMemberS{Value: id},
@@ -47,7 +48,7 @@ func (pr *DynamoStorage) GetByID(id string) (*domain.Player, error) {
 	return p, nil
 }
 
-func (pr *DynamoStorage) Add(p *domain.Player) error {
+func (pr *DynamoStorage) Add(p entity.Entity) error {
 	marshaledItem, err := attributevalue.MarshalMap(p)
 	if err != nil {
 		return err
@@ -62,7 +63,8 @@ func (pr *DynamoStorage) Add(p *domain.Player) error {
 	return err
 }
 
-func (br *DynamoStorage) Update(p *domain.Player) error {
+func (br *DynamoStorage) Update(e entity.Entity) error {
+	p := e.(*domain.Player)
 	updateItemInput := &dynamodb.UpdateItemInput{
 		Key: map[string]types.AttributeValue{
 			"ID": &types.AttributeValueMemberS{Value: p.ID},

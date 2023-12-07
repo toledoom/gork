@@ -20,7 +20,6 @@ import (
 	"github.com/toledoom/gork/internal/storage/player"
 	"github.com/toledoom/gork/pkg/cqrs"
 	"github.com/toledoom/gork/pkg/di"
-	"github.com/toledoom/gork/pkg/entity"
 	"github.com/toledoom/gork/pkg/event"
 	"github.com/toledoom/gork/pkg/persistence"
 )
@@ -49,6 +48,12 @@ func SetupServices(container *di.Container) {
 		k := int64(20)
 		s := int64(400)
 		return battledomain.NewEloScoreCalculator(k, s)
+	})
+	di.AddService[*battle.DynamoStorage](container, func(*di.Container) *battle.DynamoStorage {
+		return battle.NewDynamoStorage(di.GetService[*dynamodb.Client](container))
+	})
+	di.AddService[*player.DynamoStorage](container, func(*di.Container) *player.DynamoStorage {
+		return player.NewDynamoStorage(di.GetService[*dynamodb.Client](container))
 	})
 }
 
@@ -84,17 +89,13 @@ func SetupQueryHandlers(container *di.Container, qr *cqrs.QueryRegistry) {
 }
 
 func SetupDataMapper(dataMapper *persistence.StorageMapper, container *di.Container) {
-	dataMapper.AddPersistenceFn(reflect.TypeOf(battledomain.Battle{}), persistence.CreationQuery, func(e entity.Entity) error {
-		b := e.(*battledomain.Battle)
-		bdr := battle.NewDynamoStorage(di.GetService[*dynamodb.Client](container))
-		return bdr.Add(b)
-	})
+	dataMapper.AddPersistenceFn(reflect.TypeOf(battledomain.Battle{}), persistence.CreationQuery, di.GetService[*battle.DynamoStorage](container).Add)
+	dataMapper.AddPersistenceFn(reflect.TypeOf(battledomain.Battle{}), persistence.UpdateQuery, di.GetService[*battle.DynamoStorage](container).Update)
+	dataMapper.AddFetchOneFn(reflect.TypeOf(battledomain.Battle{}), di.GetService[*battle.DynamoStorage](container).GetByID)
 
-	dataMapper.AddPersistenceFn(reflect.TypeOf(battledomain.Battle{}), persistence.UpdateQuery, func(e entity.Entity) error {
-		b := e.(*battledomain.Battle)
-		bdr := battle.NewDynamoStorage(di.GetService[*dynamodb.Client](container))
-		return bdr.Update(b)
-	})
+	dataMapper.AddPersistenceFn(reflect.TypeOf(playerdomain.Player{}), persistence.CreationQuery, di.GetService[*player.DynamoStorage](container).Add)
+	dataMapper.AddPersistenceFn(reflect.TypeOf(playerdomain.Player{}), persistence.UpdateQuery, di.GetService[*player.DynamoStorage](container).Update)
+	dataMapper.AddFetchOneFn(reflect.TypeOf(playerdomain.Player{}), di.GetService[*player.DynamoStorage](container).GetByID)
 }
 
 func SetupEventPublisher(eventPublisher *event.Publisher, container *di.Container) {
