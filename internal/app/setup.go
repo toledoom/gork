@@ -18,7 +18,7 @@ import (
 	"github.com/toledoom/gork/internal/storage/battle"
 	"github.com/toledoom/gork/internal/storage/leaderboard"
 	"github.com/toledoom/gork/internal/storage/player"
-	"github.com/toledoom/gork/pkg/cqrs"
+	"github.com/toledoom/gork/pkg/application/cqrs"
 	"github.com/toledoom/gork/pkg/di"
 	"github.com/toledoom/gork/pkg/event"
 	"github.com/toledoom/gork/pkg/persistence"

@@ -3,7 +3,7 @@ package application
 import (
 	"net/http"
 
-	"github.com/toledoom/gork/pkg/cqrs"
+	"github.com/toledoom/gork/pkg/application/cqrs"
 	"github.com/toledoom/gork/pkg/di"
 	"github.com/toledoom/gork/pkg/event"
 	"github.com/toledoom/gork/pkg/persistence"
