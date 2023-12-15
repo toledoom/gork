@@ -68,9 +68,18 @@ func (api *Api) FinishBattleHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	q := &query.GetBattleResult{
+		BattleID: finishBattleReq.BattleId,
+	}
+	gbrr, err := application.HandleQuery[*query.GetBattleResult, *query.GetBattleResultResponse](api.app, q)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	resp := &battle.FinishBattleResponse{
-		Player1Score: 0, // TODO: Get the score using a query
-		Player2Score: 0, // TODO: Get the score using a query
+		Player1Score: gbrr.Player1Score,
+		Player2Score: gbrr.Player2Score,
 	}
 	marshalledResp, _ := protojson.Marshal(resp)
 	w.Write(marshalledResp)

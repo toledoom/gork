@@ -55,9 +55,17 @@ func (s *GameServer) FinishBattle(ctx context.Context, fbr *battle.FinishBattleR
 		return nil, err
 	}
 
+	q := &query.GetBattleResult{
+		BattleID: fbr.BattleId,
+	}
+	gbrr, err := application.HandleQuery[*query.GetBattleResult, *query.GetBattleResultResponse](s.app, q)
+	if err != nil {
+		return nil, err
+	}
+
 	return &battle.FinishBattleResponse{
-		Player1Score: 0, // TODO: Get the score using a query
-		Player2Score: 0, // TODO: Get the score using a query
+		Player1Score: gbrr.Player1Score,
+		Player2Score: gbrr.Player2Score,
 	}, nil
 }
 

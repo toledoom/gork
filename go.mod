@@ -4,15 +4,13 @@ go 1.21
 
 require (
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.21.5
+	github.com/go-chi/chi/v5 v5.0.10
 	github.com/stretchr/testify v1.8.4
 	google.golang.org/grpc v1.58.1
 	google.golang.org/protobuf v1.31.0
 )
 
-require (
-	github.com/ajg/form v1.5.1 // indirect
-	github.com/go-chi/chi/v5 v5.0.10 // indirect
-)
+require github.com/ajg/form v1.5.1 // indirect
 
 require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.38
