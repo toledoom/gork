@@ -10,16 +10,16 @@ import (
 	"github.com/toledoom/gork/internal/ports/grpc/proto/battle"
 	"github.com/toledoom/gork/internal/ports/grpc/proto/leaderboard"
 	"github.com/toledoom/gork/internal/ports/grpc/proto/player"
-	"github.com/toledoom/gork/pkg/application"
+	"github.com/toledoom/gork/pkg/gork"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type Api struct {
-	app *application.App
+	app *gork.App
 }
 
-func NewApi(app *application.App) *Api {
+func NewApi(app *gork.App) *Api {
 	return &Api{
 		app: app,
 	}
@@ -41,7 +41,7 @@ func (api *Api) StartBattleHandler(w http.ResponseWriter, r *http.Request) {
 		Player2ID: startBattleReq.PlayerId2,
 	}
 
-	err = application.HandleCommand[*command.StartBattle](api.app, c)
+	err = gork.HandleCommand[*command.StartBattle](api.app, c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -62,7 +62,7 @@ func (api *Api) FinishBattleHandler(w http.ResponseWriter, r *http.Request) {
 		WinnerID: finishBattleReq.WinnerId,
 	}
 
-	err = application.HandleCommand[*command.FinishBattle](api.app, c)
+	err = gork.HandleCommand[*command.FinishBattle](api.app, c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -71,7 +71,7 @@ func (api *Api) FinishBattleHandler(w http.ResponseWriter, r *http.Request) {
 	q := &query.GetBattleResult{
 		BattleID: finishBattleReq.BattleId,
 	}
-	gbrr, err := application.HandleQuery[*query.GetBattleResult, *query.GetBattleResultResponse](api.app, q)
+	gbrr, err := gork.HandleQuery[*query.GetBattleResult, *query.GetBattleResultResponse](api.app, q)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -96,7 +96,7 @@ func (api *Api) GetRankHandler(w http.ResponseWriter, r *http.Request) {
 		PlayerID: getRankReq.PlayerId,
 	}
 
-	getRankResponse, err := application.HandleQuery[*query.GetRank, *query.GetRankResponse](api.app, q)
+	getRankResponse, err := gork.HandleQuery[*query.GetRank, *query.GetRankResponse](api.app, q)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -120,7 +120,7 @@ func (api *Api) GetTopPlayersHandler(w http.ResponseWriter, r *http.Request) {
 		NumPlayers: getTopPlayersReq.NumPlayers,
 	}
 
-	getTopPlayersResponse, err := application.HandleQuery[*query.GetTopPlayers, *query.GetTopPlayersResponse](api.app, q)
+	getTopPlayersResponse, err := gork.HandleQuery[*query.GetTopPlayers, *query.GetTopPlayersResponse](api.app, q)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -153,7 +153,7 @@ func (api *Api) CreatePlayerHandler(w http.ResponseWriter, r *http.Request) {
 		Name:     createPlayerReq.Name,
 	}
 
-	err = application.HandleCommand[*command.CreatePlayer](api.app, c)
+	err = gork.HandleCommand[*command.CreatePlayer](api.app, c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -174,7 +174,7 @@ func (api *Api) GetPlayerByIDHandler(w http.ResponseWriter, r *http.Request) {
 		PlayerID: getPlayerByIDReq.Id,
 	}
 
-	getPlayerByIDResponse, err := application.HandleQuery[*query.GetPlayerByID, *query.GetPlayerByIDResponse](api.app, q)
+	getPlayerByIDResponse, err := gork.HandleQuery[*query.GetPlayerByID, *query.GetPlayerByIDResponse](api.app, q)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

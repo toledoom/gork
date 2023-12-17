@@ -10,11 +10,11 @@ import (
 	"github.com/toledoom/gork/internal/ports/grpc/proto/battle"
 	"github.com/toledoom/gork/internal/ports/grpc/proto/leaderboard"
 	"github.com/toledoom/gork/internal/ports/grpc/proto/player"
-	"github.com/toledoom/gork/pkg/application"
+	"github.com/toledoom/gork/pkg/gork"
 )
 
 func main() {
-	a := application.New(app.SetupCommandHandlers, app.SetupQueryHandlers)
+	a := gork.NewApp(app.SetupCommandHandlers, app.SetupQueryHandlers)
 	a.Start(app.SetupServices, app.SetupRepositories, app.SetupDataMapper, app.SetupEventPublisher)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", 50051))

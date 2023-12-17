@@ -5,11 +5,11 @@ import (
 	"github.com/go-chi/render"
 	"github.com/toledoom/gork/internal/app"
 	httpport "github.com/toledoom/gork/internal/ports/http"
-	"github.com/toledoom/gork/pkg/application"
+	"github.com/toledoom/gork/pkg/gork"
 )
 
 func main() {
-	a := application.New(app.SetupCommandHandlers, app.SetupQueryHandlers)
+	a := gork.NewApp(app.SetupCommandHandlers, app.SetupQueryHandlers)
 	a.Start(app.SetupServices, app.SetupRepositories, app.SetupDataMapper, app.SetupEventPublisher)
 
 	httpApi := httpport.NewApi(a)

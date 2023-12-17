@@ -9,18 +9,18 @@ import (
 	"github.com/toledoom/gork/internal/ports/grpc/proto/battle"
 	"github.com/toledoom/gork/internal/ports/grpc/proto/leaderboard"
 	"github.com/toledoom/gork/internal/ports/grpc/proto/player"
-	"github.com/toledoom/gork/pkg/application"
+	"github.com/toledoom/gork/pkg/gork"
 )
 
 type GameServer struct {
-	app *application.App
+	app *gork.App
 
 	battle.UnimplementedBattleServer
 	leaderboard.UnimplementedLeaderboardServer
 	player.UnimplementedPlayerServer
 }
 
-func NewGameServer(app *application.App) *GameServer {
+func NewGameServer(app *gork.App) *GameServer {
 	return &GameServer{
 		app: app,
 	}
@@ -34,7 +34,7 @@ func (s *GameServer) StartBattle(ctx context.Context, sbr *battle.StartBattleReq
 		Player2ID: sbr.PlayerId2,
 	}
 
-	err := application.HandleCommand[*command.StartBattle](s.app, c)
+	err := gork.HandleCommand[*command.StartBattle](s.app, c)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (s *GameServer) FinishBattle(ctx context.Context, fbr *battle.FinishBattleR
 		WinnerID: fbr.WinnerId,
 	}
 
-	err := application.HandleCommand[*command.FinishBattle](s.app, c)
+	err := gork.HandleCommand[*command.FinishBattle](s.app, c)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (s *GameServer) FinishBattle(ctx context.Context, fbr *battle.FinishBattleR
 	q := &query.GetBattleResult{
 		BattleID: fbr.BattleId,
 	}
-	gbrr, err := application.HandleQuery[*query.GetBattleResult, *query.GetBattleResultResponse](s.app, q)
+	gbrr, err := gork.HandleQuery[*query.GetBattleResult, *query.GetBattleResultResponse](s.app, q)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (s *GameServer) GetRank(ctx context.Context, grr *leaderboard.GetRankReques
 		PlayerID: grr.PlayerId,
 	}
 
-	getRankResponse, err := application.HandleQuery[*query.GetRank, *query.GetRankResponse](s.app, q)
+	getRankResponse, err := gork.HandleQuery[*query.GetRank, *query.GetRankResponse](s.app, q)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (s *GameServer) GetTopPlayers(ctx context.Context, gtp *leaderboard.GetTopP
 	q := &query.GetTopPlayers{
 		NumPlayers: gtp.NumPlayers,
 	}
-	getTopPlayersResponse, err := application.HandleQuery[*query.GetTopPlayers, *query.GetTopPlayersResponse](s.app, q)
+	getTopPlayersResponse, err := gork.HandleQuery[*query.GetTopPlayers, *query.GetTopPlayersResponse](s.app, q)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (s *GameServer) CreatePlayer(ctx context.Context, cpr *player.CreatePlayerR
 		PlayerID: cpr.Id,
 		Name:     cpr.Name,
 	}
-	err := application.HandleCommand[*command.CreatePlayer](s.app, c)
+	err := gork.HandleCommand[*command.CreatePlayer](s.app, c)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (s *GameServer) GetPlayerById(ctx context.Context, cpr *player.GetPlayerByI
 	q := &query.GetPlayerByID{
 		PlayerID: cpr.Id,
 	}
-	getPlayerByIDResponse, err := application.HandleQuery[*query.GetPlayerByID, *query.GetPlayerByIDResponse](s.app, q)
+	getPlayerByIDResponse, err := gork.HandleQuery[*query.GetPlayerByID, *query.GetPlayerByIDResponse](s.app, q)
 	if err != nil {
 		return nil, err
 	}

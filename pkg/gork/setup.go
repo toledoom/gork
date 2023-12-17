@@ -1,9 +1,9 @@
-package application
+package gork
 
 import (
-	"github.com/toledoom/gork/pkg/application/cqrs"
 	"github.com/toledoom/gork/pkg/di"
 	"github.com/toledoom/gork/pkg/event"
+	"github.com/toledoom/gork/pkg/gork/cqrs"
 	"github.com/toledoom/gork/pkg/persistence"
 )
 

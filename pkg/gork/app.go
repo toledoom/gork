@@ -1,11 +1,11 @@
-package application
+package gork
 
 import (
 	"net/http"
 
-	"github.com/toledoom/gork/pkg/application/cqrs"
 	"github.com/toledoom/gork/pkg/di"
 	"github.com/toledoom/gork/pkg/event"
+	"github.com/toledoom/gork/pkg/gork/cqrs"
 	"github.com/toledoom/gork/pkg/persistence"
 	grpcgork "github.com/toledoom/gork/pkg/ports/grpc"
 	httpgork "github.com/toledoom/gork/pkg/ports/http"
@@ -26,7 +26,7 @@ type App struct {
 	queryHandlersSetup   QueryHandlersSetup
 }
 
-func New(commandHandlersSetup CommandHandlersSetup, queryHandlersSetup QueryHandlersSetup) *App {
+func NewApp(commandHandlersSetup CommandHandlersSetup, queryHandlersSetup QueryHandlersSetup) *App {
 	container := di.NewContainer()
 	storageMapper := persistence.NewStorageMapper()
 	di.AddService[*event.Publisher](container, func(*di.Container) *event.Publisher { return event.NewPublisher() })
