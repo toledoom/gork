@@ -22,7 +22,7 @@ func wrapper(container *Container, setupRepositories RepositoriesSetup, storageM
 		eventPublisher := GetService[*EventPublisher](container)
 
 		for _, ev := range uow.DomainEvents() {
-			eventPublisher.Publish(ev)
+			eventPublisher.publish(ev)
 		}
 
 		return h, err

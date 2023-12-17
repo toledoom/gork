@@ -17,7 +17,7 @@ func NewPlayerScoreUpdatedEventHandler(r Ranking) *PlayerScoreUpdatedEventHandle
 	}
 }
 
-func (eh *PlayerScoreUpdatedEventHandler) Notify(evt gork.Event) error {
+func (eh *PlayerScoreUpdatedEventHandler) Handle(evt gork.Event) error {
 	pse, ok := evt.(*player.ScoreUpdatedEvent)
 	if !ok {
 		return errors.New("invalid event. Want PlayerScoreUpdated")

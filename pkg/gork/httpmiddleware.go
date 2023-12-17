@@ -15,7 +15,7 @@ func WithCommitAndNotifyMiddleware(container *Container, setupRepositories Repos
 			uow.Commit()
 			eventPublisher := GetService[*EventPublisher](container)
 			for _, ev := range uow.DomainEvents() {
-				eventPublisher.Publish(ev)
+				eventPublisher.publish(ev)
 			}
 		}
 

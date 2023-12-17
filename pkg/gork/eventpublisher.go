@@ -6,21 +6,21 @@ type Event interface {
 	Name() string
 }
 
-type Handler interface {
-	Notify(event Event) error
+type eventHandler interface {
+	Handle(event Event) error
 }
 
 type EventPublisher struct {
-	handlers map[string][]Handler
+	handlers map[string][]eventHandler
 }
 
 func NewPublisher() *EventPublisher {
 	return &EventPublisher{
-		handlers: make(map[string][]Handler),
+		handlers: make(map[string][]eventHandler),
 	}
 }
 
-func (e *EventPublisher) Subscribe(handler Handler, events ...Event) {
+func (e *EventPublisher) Subscribe(handler eventHandler, events ...Event) {
 	for _, event := range events {
 		handlers := e.handlers[event.Name()]
 		handlers = append(handlers, handler)
@@ -28,11 +28,11 @@ func (e *EventPublisher) Subscribe(handler Handler, events ...Event) {
 	}
 }
 
-func (e *EventPublisher) Publish(event Event) error {
+func (e *EventPublisher) publish(event Event) error {
 	var multipleError error
 	n := event.Name()
 	for _, handler := range e.handlers[n] {
-		err := handler.Notify(event)
+		err := handler.Handle(event)
 		if err != nil {
 			multipleError = multierror.Append(multipleError, err)
 		}
