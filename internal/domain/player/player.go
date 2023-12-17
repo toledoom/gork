@@ -1,36 +1,35 @@
 package player
 
 import (
-	"github.com/toledoom/gork/pkg/entity"
-	"github.com/toledoom/gork/pkg/event"
+	"github.com/toledoom/gork/pkg/gork"
 )
 
 type Player struct {
-	ag *entity.Aggregate
+	ag *gork.Aggregate
 
 	ID    string
 	Name  string
 	Score int64
 }
 
-func (p *Player) AddEvent(e event.Event) {
+func (p *Player) AddEvent(e gork.Event) {
 	p.ag.AddEvent(e)
 }
 
-func (p *Player) GetEvents() []event.Event {
+func (p *Player) GetEvents() []gork.Event {
 	return p.ag.GetEvents()
 }
 
 func New(id, name string) *Player {
 	return &Player{
-		ag: &entity.Aggregate{},
+		ag: &gork.Aggregate{},
 
 		ID:   id,
 		Name: name,
 	}
 }
 
-var _ entity.Entity = (*Player)(nil)
+var _ gork.Entity = (*Player)(nil)
 
 type Repository interface {
 	Add(p *Player) error

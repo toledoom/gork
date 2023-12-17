@@ -3,7 +3,6 @@ package gork
 import (
 	"net/http"
 
-	"github.com/toledoom/gork/pkg/event"
 	"github.com/toledoom/gork/pkg/gork/cqrs"
 
 	"google.golang.org/grpc"
@@ -13,7 +12,7 @@ type App struct {
 	container         *Container
 	storageMapper     *StorageMapper
 	setupRepositories RepositoriesSetup
-	eventPublisher    *event.Publisher
+	eventPublisher    *EventPublisher
 
 	commandRegistry *cqrs.CommandRegistry
 	queryRegistry   *cqrs.QueryRegistry
@@ -25,8 +24,8 @@ type App struct {
 func NewApp(commandHandlersSetup CommandHandlersSetup, queryHandlersSetup QueryHandlersSetup) *App {
 	container := NewContainer()
 	storageMapper := NewStorageMapper()
-	AddService[*event.Publisher](container, func(*Container) *event.Publisher { return event.NewPublisher() })
-	eventPublisher := GetService[*event.Publisher](container)
+	AddService[*EventPublisher](container, func(*Container) *EventPublisher { return NewPublisher() })
+	eventPublisher := GetService[*EventPublisher](container)
 
 	return &App{
 		container:      container,

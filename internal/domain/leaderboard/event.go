@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/toledoom/gork/internal/domain/player"
-	"github.com/toledoom/gork/pkg/event"
+	"github.com/toledoom/gork/pkg/gork"
 )
 
 type PlayerScoreUpdatedEventHandler struct {
@@ -17,7 +17,7 @@ func NewPlayerScoreUpdatedEventHandler(r Ranking) *PlayerScoreUpdatedEventHandle
 	}
 }
 
-func (eh *PlayerScoreUpdatedEventHandler) Notify(evt event.Event) error {
+func (eh *PlayerScoreUpdatedEventHandler) Notify(evt gork.Event) error {
 	pse, ok := evt.(*player.ScoreUpdatedEvent)
 	if !ok {
 		return errors.New("invalid event. Want PlayerScoreUpdated")

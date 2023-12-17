@@ -3,8 +3,6 @@ package gork
 import (
 	"fmt"
 	"reflect"
-
-	"github.com/toledoom/gork/pkg/entity"
 )
 
 const (
@@ -17,9 +15,9 @@ const (
 
 type RepositoriesSetup func(container *Container, uow Worker)
 
-type PersistenceFn func(e entity.Entity) error
-type FetchOneFn func(id string) (entity.Entity, error)
-type FetchManyFn func(filters ...Filter) ([]entity.Entity, error)
+type PersistenceFn func(e Entity) error
+type FetchOneFn func(id string) (Entity, error)
+type FetchManyFn func(filters ...Filter) ([]Entity, error)
 
 type StorageMapper struct {
 	persistenceFns map[string]PersistenceFn

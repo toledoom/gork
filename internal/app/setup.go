@@ -18,24 +18,22 @@ import (
 	"github.com/toledoom/gork/internal/storage/battle"
 	"github.com/toledoom/gork/internal/storage/leaderboard"
 	"github.com/toledoom/gork/internal/storage/player"
-	"github.com/toledoom/gork/pkg/di"
-	"github.com/toledoom/gork/pkg/event"
+	"github.com/toledoom/gork/pkg/gork"
 	"github.com/toledoom/gork/pkg/gork/cqrs"
-	"github.com/toledoom/gork/pkg/persistence"
 )
 
-func SetupServices(container *di.Container) {
-	di.AddService[*redis.Client](container, func(*di.Container) *redis.Client {
+func SetupServices(container *gork.Container) {
+	gork.AddService[*redis.Client](container, func(*gork.Container) *redis.Client {
 		return createRedisLocalClient(os.Getenv("REDIS_ADDR"))
 	})
-	di.AddService[leaderboarddomain.Ranking](container, func(*di.Container) leaderboarddomain.Ranking {
-		redisClient := di.GetService[*redis.Client](container)
+	gork.AddService[leaderboarddomain.Ranking](container, func(*gork.Container) leaderboarddomain.Ranking {
+		redisClient := gork.GetService[*redis.Client](container)
 		return leaderboard.NewRedisRanking(redisClient, "my-ranking")
 	})
-	di.AddService[*dynamodb.Client](container, func(*di.Container) *dynamodb.Client {
+	gork.AddService[*dynamodb.Client](container, func(*gork.Container) *dynamodb.Client {
 		return createDynamoDBLocalClient(os.Getenv("DYNAMO_ADDR"))
 	})
-	di.AddService[battledomain.ScoreCalculator](container, func(*di.Container) battledomain.ScoreCalculator {
+	gork.AddService[battledomain.ScoreCalculator](container, func(*gork.Container) battledomain.ScoreCalculator {
 		// A better idea would be to retrieve these next values from a config repository, since they may vary
 		// depending on several factors (e.g. players levels). In that case, the solution would be to create a
 		// a config repository and inject it as a dependency into the score calculator
@@ -43,66 +41,66 @@ func SetupServices(container *di.Container) {
 		s := int64(400)
 		return battledomain.NewEloScoreCalculator(k, s)
 	})
-	di.AddService[*battle.DynamoStorage](container, func(*di.Container) *battle.DynamoStorage {
-		return battle.NewDynamoStorage(di.GetService[*dynamodb.Client](container))
+	gork.AddService[*battle.DynamoStorage](container, func(*gork.Container) *battle.DynamoStorage {
+		return battle.NewDynamoStorage(gork.GetService[*dynamodb.Client](container))
 	})
-	di.AddService[*player.DynamoStorage](container, func(*di.Container) *player.DynamoStorage {
-		return player.NewDynamoStorage(di.GetService[*dynamodb.Client](container))
+	gork.AddService[*player.DynamoStorage](container, func(*gork.Container) *player.DynamoStorage {
+		return player.NewDynamoStorage(gork.GetService[*dynamodb.Client](container))
 	})
 }
 
-func SetupRepositories(container *di.Container, uow persistence.Worker) {
-	di.AddService[playerdomain.Repository](container, func(*di.Container) playerdomain.Repository {
+func SetupRepositories(container *gork.Container, uow gork.Worker) {
+	gork.AddService[playerdomain.Repository](container, func(*gork.Container) playerdomain.Repository {
 		return player.NewUowRepository(uow)
 	})
-	di.AddService[battledomain.Repository](container, func(*di.Container) battledomain.Repository {
+	gork.AddService[battledomain.Repository](container, func(*gork.Container) battledomain.Repository {
 		return battle.NewUowRepository(uow)
 	})
 }
 
-func SetupCommandHandlers(container *di.Container, cr *cqrs.CommandRegistry) {
+func SetupCommandHandlers(container *gork.Container, cr *cqrs.CommandRegistry) {
 	cqrs.RegisterCommandHandler[*command.CreatePlayer](
-		cr, command.CreatePlayerHandler(di.GetService[playerdomain.Repository](container)),
+		cr, command.CreatePlayerHandler(gork.GetService[playerdomain.Repository](container)),
 	)
 	cqrs.RegisterCommandHandler[*command.StartBattle](
 		cr, command.StartBattleHandler(
-			di.GetService[battledomain.Repository](container),
-			di.GetService[playerdomain.Repository](container),
+			gork.GetService[battledomain.Repository](container),
+			gork.GetService[playerdomain.Repository](container),
 		),
 	)
 	cqrs.RegisterCommandHandler[*command.FinishBattle](
 		cr, command.FinishBattleHandler(
-			di.GetService[battledomain.Repository](container),
-			di.GetService[playerdomain.Repository](container),
-			di.GetService[battledomain.ScoreCalculator](container),
+			gork.GetService[battledomain.Repository](container),
+			gork.GetService[playerdomain.Repository](container),
+			gork.GetService[battledomain.ScoreCalculator](container),
 		),
 	)
 }
 
-func SetupQueryHandlers(container *di.Container, qr *cqrs.QueryRegistry) {
+func SetupQueryHandlers(container *gork.Container, qr *cqrs.QueryRegistry) {
 	cqrs.RegisterQueryHandler[*query.GetRank, *query.GetRankResponse](
-		qr, query.GetRankHandler(di.GetService[leaderboarddomain.Ranking](container)),
+		qr, query.GetRankHandler(gork.GetService[leaderboarddomain.Ranking](container)),
 	)
 	cqrs.RegisterQueryHandler[*query.GetTopPlayers, *query.GetTopPlayersResponse](
-		qr, query.GetTopPlayersHandler(di.GetService[leaderboarddomain.Ranking](container)),
+		qr, query.GetTopPlayersHandler(gork.GetService[leaderboarddomain.Ranking](container)),
 	)
 	cqrs.RegisterQueryHandler[*query.GetPlayerByID, *query.GetPlayerByIDResponse](
-		qr, query.GetPlayerByIDHandler(di.GetService[playerdomain.Repository](container)),
+		qr, query.GetPlayerByIDHandler(gork.GetService[playerdomain.Repository](container)),
 	)
 }
 
-func SetupDataMapper(dataMapper *persistence.StorageMapper, container *di.Container) {
-	dataMapper.AddPersistenceFn(reflect.TypeOf(battledomain.Battle{}), persistence.CreationQuery, di.GetService[*battle.DynamoStorage](container).Add)
-	dataMapper.AddPersistenceFn(reflect.TypeOf(battledomain.Battle{}), persistence.UpdateQuery, di.GetService[*battle.DynamoStorage](container).Update)
-	dataMapper.AddFetchOneFn(reflect.TypeOf(battledomain.Battle{}), di.GetService[*battle.DynamoStorage](container).GetByID)
+func SetupDataMapper(dataMapper *gork.StorageMapper, container *gork.Container) {
+	dataMapper.AddPersistenceFn(reflect.TypeOf(battledomain.Battle{}), gork.CreationQuery, gork.GetService[*battle.DynamoStorage](container).Add)
+	dataMapper.AddPersistenceFn(reflect.TypeOf(battledomain.Battle{}), gork.UpdateQuery, gork.GetService[*battle.DynamoStorage](container).Update)
+	dataMapper.AddFetchOneFn(reflect.TypeOf(battledomain.Battle{}), gork.GetService[*battle.DynamoStorage](container).GetByID)
 
-	dataMapper.AddPersistenceFn(reflect.TypeOf(playerdomain.Player{}), persistence.CreationQuery, di.GetService[*player.DynamoStorage](container).Add)
-	dataMapper.AddPersistenceFn(reflect.TypeOf(playerdomain.Player{}), persistence.UpdateQuery, di.GetService[*player.DynamoStorage](container).Update)
-	dataMapper.AddFetchOneFn(reflect.TypeOf(playerdomain.Player{}), di.GetService[*player.DynamoStorage](container).GetByID)
+	dataMapper.AddPersistenceFn(reflect.TypeOf(playerdomain.Player{}), gork.CreationQuery, gork.GetService[*player.DynamoStorage](container).Add)
+	dataMapper.AddPersistenceFn(reflect.TypeOf(playerdomain.Player{}), gork.UpdateQuery, gork.GetService[*player.DynamoStorage](container).Update)
+	dataMapper.AddFetchOneFn(reflect.TypeOf(playerdomain.Player{}), gork.GetService[*player.DynamoStorage](container).GetByID)
 }
 
-func SetupEventPublisher(eventPublisher *event.Publisher, container *di.Container) {
-	r := di.GetService[leaderboarddomain.Ranking](container)
+func SetupEventPublisher(eventPublisher *gork.EventPublisher, container *gork.Container) {
+	r := gork.GetService[leaderboarddomain.Ranking](container)
 	eventPublisher.Subscribe(leaderboarddomain.NewPlayerScoreUpdatedEventHandler(r), &playerdomain.ScoreUpdatedEvent{})
 }
 

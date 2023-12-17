@@ -2,19 +2,16 @@ package gork
 
 import (
 	"reflect"
-
-	"github.com/toledoom/gork/pkg/entity"
-	"github.com/toledoom/gork/pkg/event"
 )
 
 type Worker interface {
-	RegisterNew(newEntity entity.Entity) error
-	RegisterDirty(modifiedEntity entity.Entity) error
-	RegisterDeleted(deletedEntity entity.Entity) error
-	FetchOne(t reflect.Type, id string) (entity.Entity, error)
-	FetchMany(t reflect.Type, filters ...Filter) ([]entity.Entity, error)
+	RegisterNew(newEntity Entity) error
+	RegisterDirty(modifiedEntity Entity) error
+	RegisterDeleted(deletedEntity Entity) error
+	FetchOne(t reflect.Type, id string) (Entity, error)
+	FetchMany(t reflect.Type, filters ...Filter) ([]Entity, error)
 	Commit() error
-	DomainEvents() []event.Event
+	DomainEvents() []Event
 }
 
 type Filter interface { // TODO: Think about implementations of actual filters
@@ -22,7 +19,7 @@ type Filter interface { // TODO: Think about implementations of actual filters
 }
 
 type UnitOfWork struct {
-	newEntities, dirtyEntities, deletedEntities []entity.Entity
+	newEntities, dirtyEntities, deletedEntities []Entity
 	dataMapper                                  *StorageMapper
 }
 
@@ -32,27 +29,27 @@ func NewUnitOfWork(datamapper *StorageMapper) *UnitOfWork {
 	}
 }
 
-func (uow *UnitOfWork) RegisterNew(newEntity entity.Entity) error {
+func (uow *UnitOfWork) RegisterNew(newEntity Entity) error {
 	uow.newEntities = append(uow.newEntities, newEntity)
 	return nil
 }
 
-func (uow *UnitOfWork) RegisterDirty(modifiedEntity entity.Entity) error {
+func (uow *UnitOfWork) RegisterDirty(modifiedEntity Entity) error {
 	uow.dirtyEntities = append(uow.dirtyEntities, modifiedEntity)
 	return nil
 }
 
-func (uow *UnitOfWork) RegisterDeleted(deletedEntity entity.Entity) error {
+func (uow *UnitOfWork) RegisterDeleted(deletedEntity Entity) error {
 	uow.deletedEntities = append(uow.deletedEntities, deletedEntity)
 	return nil
 }
 
-func (uow *UnitOfWork) FetchOne(t reflect.Type, id string) (entity.Entity, error) {
+func (uow *UnitOfWork) FetchOne(t reflect.Type, id string) (Entity, error) {
 	fn := uow.dataMapper.GetFetchOneFn(t)
 	return fn(id)
 }
 
-func (uow *UnitOfWork) FetchMany(t reflect.Type, filters ...Filter) ([]entity.Entity, error) {
+func (uow *UnitOfWork) FetchMany(t reflect.Type, filters ...Filter) ([]Entity, error) {
 	fn := uow.dataMapper.GetFetchManyFn(t)
 	return fn(filters...)
 }
@@ -85,8 +82,8 @@ func (uow *UnitOfWork) Commit() error {
 	return nil
 }
 
-func (uow *UnitOfWork) DomainEvents() []event.Event {
-	var events []event.Event
+func (uow *UnitOfWork) DomainEvents() []Event {
+	var events []Event
 	for _, e := range uow.newEntities {
 		events = append(events, e.GetEvents()...)
 	}

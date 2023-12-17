@@ -3,11 +3,11 @@ package battle
 import (
 	"time"
 
-	"github.com/toledoom/gork/pkg/event"
+	"github.com/toledoom/gork/pkg/gork"
 )
 
 type StartedEvent struct {
-	event.Event
+	gork.Event
 
 	BattleID  string
 	StartedAt time.Time
@@ -25,7 +25,7 @@ func (bse *StartedEvent) Name() string {
 }
 
 type FinishedEvent struct {
-	event.Event
+	gork.Event
 
 	BattleID   string
 	FinishedAt time.Time

@@ -1,9 +1,9 @@
 package player
 
-import "github.com/toledoom/gork/pkg/event"
+import "github.com/toledoom/gork/pkg/gork"
 
 type ScoreUpdatedEvent struct {
-	event.Event
+	gork.Event
 
 	PlayerID string
 	OldScore int64

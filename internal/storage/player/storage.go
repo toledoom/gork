@@ -10,8 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	domain "github.com/toledoom/gork/internal/domain/player"
-	"github.com/toledoom/gork/pkg/entity"
-	"github.com/toledoom/gork/pkg/persistence"
+	"github.com/toledoom/gork/pkg/gork"
 )
 
 const tableName = "Players"
@@ -26,7 +25,7 @@ func NewDynamoStorage(d *dynamodb.Client) *DynamoStorage {
 	}
 }
 
-func (pr *DynamoStorage) GetByID(id string) (entity.Entity, error) {
+func (pr *DynamoStorage) GetByID(id string) (gork.Entity, error) {
 	getItemInput := &dynamodb.GetItemInput{
 		Key: map[string]types.AttributeValue{
 			"ID": &types.AttributeValueMemberS{Value: id},
@@ -48,7 +47,7 @@ func (pr *DynamoStorage) GetByID(id string) (entity.Entity, error) {
 	return p, nil
 }
 
-func (pr *DynamoStorage) Add(p entity.Entity) error {
+func (pr *DynamoStorage) Add(p gork.Entity) error {
 	marshaledItem, err := attributevalue.MarshalMap(p)
 	if err != nil {
 		return err
@@ -63,7 +62,7 @@ func (pr *DynamoStorage) Add(p entity.Entity) error {
 	return err
 }
 
-func (br *DynamoStorage) Update(e entity.Entity) error {
+func (br *DynamoStorage) Update(e gork.Entity) error {
 	p := e.(*domain.Player)
 	updateItemInput := &dynamodb.UpdateItemInput{
 		Key: map[string]types.AttributeValue{
@@ -82,10 +81,10 @@ func (br *DynamoStorage) Update(e entity.Entity) error {
 }
 
 type UowRepository struct {
-	uow persistence.Worker
+	uow gork.Worker
 }
 
-func NewUowRepository(uow persistence.Worker) *UowRepository {
+func NewUowRepository(uow gork.Worker) *UowRepository {
 	return &UowRepository{
 		uow: uow,
 	}

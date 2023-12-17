@@ -1,4 +1,4 @@
-package event
+package gork
 
 import "github.com/hashicorp/go-multierror"
 
@@ -10,17 +10,17 @@ type Handler interface {
 	Notify(event Event) error
 }
 
-type Publisher struct {
+type EventPublisher struct {
 	handlers map[string][]Handler
 }
 
-func NewPublisher() *Publisher {
-	return &Publisher{
+func NewPublisher() *EventPublisher {
+	return &EventPublisher{
 		handlers: make(map[string][]Handler),
 	}
 }
 
-func (e *Publisher) Subscribe(handler Handler, events ...Event) {
+func (e *EventPublisher) Subscribe(handler Handler, events ...Event) {
 	for _, event := range events {
 		handlers := e.handlers[event.Name()]
 		handlers = append(handlers, handler)
@@ -28,7 +28,7 @@ func (e *Publisher) Subscribe(handler Handler, events ...Event) {
 	}
 }
 
-func (e *Publisher) Notify(event Event) error {
+func (e *EventPublisher) Publish(event Event) error {
 	var multipleError error
 	n := event.Name()
 	for _, handler := range e.handlers[n] {

@@ -3,8 +3,7 @@ package battle
 import (
 	"time"
 
-	"github.com/toledoom/gork/pkg/entity"
-	"github.com/toledoom/gork/pkg/event"
+	"github.com/toledoom/gork/pkg/gork"
 )
 
 type Result int64
@@ -15,7 +14,7 @@ const (
 )
 
 type Battle struct {
-	ag *entity.Aggregate
+	ag *gork.Aggregate
 
 	ID                                         string
 	Player1ID                                  string
@@ -25,17 +24,17 @@ type Battle struct {
 	StartedAt, FinishedAt                      time.Time
 }
 
-func (b *Battle) AddEvent(e event.Event) {
+func (b *Battle) AddEvent(e gork.Event) {
 	b.ag.AddEvent(e)
 }
 
-func (b *Battle) GetEvents() []event.Event {
+func (b *Battle) GetEvents() []gork.Event {
 	return b.ag.GetEvents()
 }
 
 func New(battleID, player1ID, player2ID string, originalPlayer1Score, originalPlayer2Score int64, startedAt time.Time) *Battle {
 	b := &Battle{
-		ag: &entity.Aggregate{},
+		ag: &gork.Aggregate{},
 
 		ID:                   battleID,
 		Player1ID:            player1ID,
@@ -60,7 +59,7 @@ func (b *Battle) Finish(battleID, winnerID string, finishedAt time.Time, calcula
 	b.AddEvent(NewFinishedEvent(battleID, finishedAt))
 }
 
-var _ entity.Entity = (*Battle)(nil)
+var _ gork.Entity = (*Battle)(nil)
 
 type Repository interface {
 	Add(b *Battle) error

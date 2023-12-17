@@ -3,7 +3,6 @@ package gork
 import (
 	"context"
 
-	"github.com/toledoom/gork/pkg/event"
 	"google.golang.org/grpc"
 )
 
@@ -20,10 +19,10 @@ func wrapper(container *Container, setupRepositories RepositoriesSetup, storageM
 		h, err := handler(ctx, req)
 
 		uow.Commit()
-		eventPublisher := GetService[*event.Publisher](container)
+		eventPublisher := GetService[*EventPublisher](container)
 
 		for _, ev := range uow.DomainEvents() {
-			eventPublisher.Notify(ev)
+			eventPublisher.Publish(ev)
 		}
 
 		return h, err

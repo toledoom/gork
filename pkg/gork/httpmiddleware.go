@@ -2,8 +2,6 @@ package gork
 
 import (
 	"net/http"
-
-	"github.com/toledoom/gork/pkg/event"
 )
 
 func WithCommitAndNotifyMiddleware(container *Container, setupRepositories RepositoriesSetup, storageMapper *StorageMapper) func(http.Handler) http.Handler {
@@ -15,9 +13,9 @@ func WithCommitAndNotifyMiddleware(container *Container, setupRepositories Repos
 			next.ServeHTTP(w, r)
 
 			uow.Commit()
-			eventPublisher := GetService[*event.Publisher](container)
+			eventPublisher := GetService[*EventPublisher](container)
 			for _, ev := range uow.DomainEvents() {
-				eventPublisher.Notify(ev)
+				eventPublisher.Publish(ev)
 			}
 		}
 
