@@ -35,12 +35,6 @@ func SetupServices(container *di.Container) {
 	di.AddService[*dynamodb.Client](container, func(*di.Container) *dynamodb.Client {
 		return createDynamoDBLocalClient(os.Getenv("DYNAMO_ADDR"))
 	})
-	di.AddService[playerdomain.Repository](container, func(*di.Container) playerdomain.Repository {
-		return player.NewUowRepository(di.GetService[persistence.Worker](container))
-	})
-	di.AddService[battledomain.Repository](container, func(*di.Container) battledomain.Repository {
-		return battle.NewUowRepository(di.GetService[persistence.Worker](container))
-	})
 	di.AddService[battledomain.ScoreCalculator](container, func(*di.Container) battledomain.ScoreCalculator {
 		// A better idea would be to retrieve these next values from a config repository, since they may vary
 		// depending on several factors (e.g. players levels). In that case, the solution would be to create a
@@ -54,6 +48,15 @@ func SetupServices(container *di.Container) {
 	})
 	di.AddService[*player.DynamoStorage](container, func(*di.Container) *player.DynamoStorage {
 		return player.NewDynamoStorage(di.GetService[*dynamodb.Client](container))
+	})
+}
+
+func SetupRepositories(container *di.Container, uow persistence.Worker) {
+	di.AddService[playerdomain.Repository](container, func(*di.Container) playerdomain.Repository {
+		return player.NewUowRepository(uow)
+	})
+	di.AddService[battledomain.Repository](container, func(*di.Container) battledomain.Repository {
+		return battle.NewUowRepository(uow)
 	})
 }
 

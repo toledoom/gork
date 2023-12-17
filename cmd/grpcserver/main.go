@@ -15,7 +15,7 @@ import (
 
 func main() {
 	a := application.New(app.SetupCommandHandlers, app.SetupQueryHandlers)
-	a.Start(app.SetupServices, app.SetupDataMapper, app.SetupEventPublisher)
+	a.Start(app.SetupServices, app.SetupRepositories, app.SetupDataMapper, app.SetupEventPublisher)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", 50051))
 	if err != nil {

@@ -8,14 +8,15 @@ import (
 	"github.com/toledoom/gork/pkg/persistence"
 )
 
-func WithCommitAndNotifyMiddleware(container *di.Container) func(http.Handler) http.Handler {
+func WithCommitAndNotifyMiddleware(container *di.Container, setupRepositories persistence.RepositoriesSetup, storageMapper *persistence.StorageMapper) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
+			uow := persistence.NewUnitOfWork(storageMapper)
+			setupRepositories(container, uow)
+
 			next.ServeHTTP(w, r)
 
-			uow := di.GetService[persistence.Worker](container)
 			uow.Commit()
-
 			eventPublisher := di.GetService[*event.Publisher](container)
 			for _, ev := range uow.DomainEvents() {
 				eventPublisher.Notify(ev)

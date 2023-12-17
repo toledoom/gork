@@ -14,9 +14,10 @@ import (
 )
 
 type App struct {
-	container      *di.Container
-	storageMapper  *persistence.StorageMapper
-	eventPublisher *event.Publisher
+	container         *di.Container
+	storageMapper     *persistence.StorageMapper
+	setupRepositories persistence.RepositoriesSetup
+	eventPublisher    *event.Publisher
 
 	commandRegistry *cqrs.CommandRegistry
 	queryRegistry   *cqrs.QueryRegistry
@@ -41,10 +42,13 @@ func New(commandHandlersSetup CommandHandlersSetup, queryHandlersSetup QueryHand
 	}
 }
 
-func (app *App) Start(servicesSetup ServicesSetup, dataMapperSetup DataMapperSetup, eventPublisherSetup EventPublisherSetup) {
-	servicesSetup(app.container)
-	di.AddService[persistence.Worker](app.container, func(*di.Container) persistence.Worker { return persistence.NewUnitOfWork(app.storageMapper) })
+func (app *App) Start(
+	servicesSetup ServicesSetup,
+	repositoriesSetup persistence.RepositoriesSetup,
+	dataMapperSetup DataMapperSetup,
+	eventPublisherSetup EventPublisherSetup) {
 
+	servicesSetup(app.container)
 	dataMapperSetup(app.storageMapper, app.container)
 	eventPublisherSetup(app.eventPublisher, app.container)
 
@@ -63,7 +67,7 @@ func HandleQuery[Q, R any](app *App, q Q) (R, error) {
 }
 
 func (app *App) GrpcServer(options ...grpc.ServerOption) *grpc.Server {
-	interceptor := grpcgork.WithCommitAndNotifyInterceptor(app.container)
+	interceptor := grpcgork.WithCommitAndNotifyInterceptor(app.container, app.setupRepositories, app.storageMapper)
 	options = append(options, interceptor)
 	s := grpc.NewServer(options...)
 
@@ -71,7 +75,7 @@ func (app *App) GrpcServer(options ...grpc.ServerOption) *grpc.Server {
 }
 
 func (app *App) httpMiddleware(h http.Handler) http.Handler {
-	middleware := httpgork.WithCommitAndNotifyMiddleware(app.container)
+	middleware := httpgork.WithCommitAndNotifyMiddleware(app.container, app.setupRepositories, app.storageMapper)
 	return middleware(h)
 }
 

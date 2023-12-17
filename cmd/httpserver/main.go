@@ -10,7 +10,7 @@ import (
 
 func main() {
 	a := application.New(app.SetupCommandHandlers, app.SetupQueryHandlers)
-	a.Start(app.SetupServices, app.SetupDataMapper, app.SetupEventPublisher)
+	a.Start(app.SetupServices, app.SetupRepositories, app.SetupDataMapper, app.SetupEventPublisher)
 
 	httpApi := httpport.NewApi(a)
 
