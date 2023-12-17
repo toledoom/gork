@@ -3,20 +3,16 @@ package gork
 import (
 	"net/http"
 
-	"github.com/toledoom/gork/pkg/di"
 	"github.com/toledoom/gork/pkg/event"
 	"github.com/toledoom/gork/pkg/gork/cqrs"
-	"github.com/toledoom/gork/pkg/persistence"
-	grpcgork "github.com/toledoom/gork/pkg/ports/grpc"
-	httpgork "github.com/toledoom/gork/pkg/ports/http"
 
 	"google.golang.org/grpc"
 )
 
 type App struct {
-	container         *di.Container
-	storageMapper     *persistence.StorageMapper
-	setupRepositories persistence.RepositoriesSetup
+	container         *Container
+	storageMapper     *StorageMapper
+	setupRepositories RepositoriesSetup
 	eventPublisher    *event.Publisher
 
 	commandRegistry *cqrs.CommandRegistry
@@ -27,10 +23,10 @@ type App struct {
 }
 
 func NewApp(commandHandlersSetup CommandHandlersSetup, queryHandlersSetup QueryHandlersSetup) *App {
-	container := di.NewContainer()
-	storageMapper := persistence.NewStorageMapper()
-	di.AddService[*event.Publisher](container, func(*di.Container) *event.Publisher { return event.NewPublisher() })
-	eventPublisher := di.GetService[*event.Publisher](container)
+	container := NewContainer()
+	storageMapper := NewStorageMapper()
+	AddService[*event.Publisher](container, func(*Container) *event.Publisher { return event.NewPublisher() })
+	eventPublisher := GetService[*event.Publisher](container)
 
 	return &App{
 		container:      container,
@@ -44,7 +40,7 @@ func NewApp(commandHandlersSetup CommandHandlersSetup, queryHandlersSetup QueryH
 
 func (app *App) Start(
 	servicesSetup ServicesSetup,
-	repositoriesSetup persistence.RepositoriesSetup,
+	repositoriesSetup RepositoriesSetup,
 	dataMapperSetup DataMapperSetup,
 	eventPublisherSetup EventPublisherSetup) {
 
@@ -67,7 +63,7 @@ func HandleQuery[Q, R any](app *App, q Q) (R, error) {
 }
 
 func (app *App) GrpcServer(options ...grpc.ServerOption) *grpc.Server {
-	interceptor := grpcgork.WithCommitAndNotifyInterceptor(app.container, app.setupRepositories, app.storageMapper)
+	interceptor := WithCommitAndNotifyInterceptor(app.container, app.setupRepositories, app.storageMapper)
 	options = append(options, interceptor)
 	s := grpc.NewServer(options...)
 
@@ -75,7 +71,7 @@ func (app *App) GrpcServer(options ...grpc.ServerOption) *grpc.Server {
 }
 
 func (app *App) httpMiddleware(h http.Handler) http.Handler {
-	middleware := httpgork.WithCommitAndNotifyMiddleware(app.container, app.setupRepositories, app.storageMapper)
+	middleware := WithCommitAndNotifyMiddleware(app.container, app.setupRepositories, app.storageMapper)
 	return middleware(h)
 }
 

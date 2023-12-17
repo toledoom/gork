@@ -1,10 +1,9 @@
-package persistence
+package gork
 
 import (
 	"fmt"
 	"reflect"
 
-	"github.com/toledoom/gork/pkg/di"
 	"github.com/toledoom/gork/pkg/entity"
 )
 
@@ -16,7 +15,7 @@ const (
 	FetchManyQuery
 )
 
-type RepositoriesSetup func(container *di.Container, uow Worker)
+type RepositoriesSetup func(container *Container, uow Worker)
 
 type PersistenceFn func(e entity.Entity) error
 type FetchOneFn func(id string) (entity.Entity, error)

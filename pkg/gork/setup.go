@@ -1,14 +1,12 @@
 package gork
 
 import (
-	"github.com/toledoom/gork/pkg/di"
 	"github.com/toledoom/gork/pkg/event"
 	"github.com/toledoom/gork/pkg/gork/cqrs"
-	"github.com/toledoom/gork/pkg/persistence"
 )
 
-type ServicesSetup func(container *di.Container)
-type CommandHandlersSetup func(container *di.Container, commandRegistry *cqrs.CommandRegistry)
-type QueryHandlersSetup func(container *di.Container, queryRegistry *cqrs.QueryRegistry)
-type DataMapperSetup func(datamapper *persistence.StorageMapper, container *di.Container)
-type EventPublisherSetup func(eventPublisher *event.Publisher, container *di.Container)
+type ServicesSetup func(container *Container)
+type CommandHandlersSetup func(container *Container, commandRegistry *cqrs.CommandRegistry)
+type QueryHandlersSetup func(container *Container, queryRegistry *cqrs.QueryRegistry)
+type DataMapperSetup func(datamapper *StorageMapper, container *Container)
+type EventPublisherSetup func(eventPublisher *event.Publisher, container *Container)

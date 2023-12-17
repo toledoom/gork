@@ -1,4 +1,4 @@
-package di
+package gork
 
 import "reflect"
 
