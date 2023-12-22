@@ -56,7 +56,7 @@ func (uow *UnitOfWork) FetchMany(t reflect.Type, filters ...Filter) ([]Entity, e
 
 func (uow *UnitOfWork) Commit() error {
 	for _, en := range uow.newEntities {
-		fn := uow.dataMapper.GetPersistenceFn(reflect.TypeOf(en), CreationQuery)
+		fn := uow.dataMapper.GetMutationFn(reflect.TypeOf(en), CreationQuery)
 		err := fn(en)
 		if err != nil {
 			return nil
@@ -64,7 +64,7 @@ func (uow *UnitOfWork) Commit() error {
 	}
 
 	for _, en := range uow.dirtyEntities {
-		fn := uow.dataMapper.GetPersistenceFn(reflect.TypeOf(en), UpdateQuery)
+		fn := uow.dataMapper.GetMutationFn(reflect.TypeOf(en), UpdateQuery)
 		err := fn(en)
 		if err != nil {
 			return nil
@@ -72,7 +72,7 @@ func (uow *UnitOfWork) Commit() error {
 	}
 
 	for _, en := range uow.deletedEntities {
-		fn := uow.dataMapper.GetPersistenceFn(reflect.TypeOf(en), DeletionQuery)
+		fn := uow.dataMapper.GetMutationFn(reflect.TypeOf(en), DeletionQuery)
 		err := fn(en)
 		if err != nil {
 			return nil

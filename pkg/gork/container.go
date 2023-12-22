@@ -8,7 +8,7 @@ type Container struct {
 	services map[string]any
 }
 
-func NewContainer() *Container {
+func newContainer() *Container {
 	return &Container{
 		services: make(map[string]any),
 	}

@@ -1,6 +1,9 @@
 package cqrs
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
 
 type CommandHandler[T any] func(T) error
 
@@ -19,7 +22,19 @@ func RegisterCommandHandler[T any](cr *CommandRegistry, ch CommandHandler[T]) {
 	cr.commandHandlers[reflect.TypeOf(t).String()] = ch
 }
 
+type CommandNotRegisteredError struct {
+	c interface{}
+}
+
+func (cnre *CommandNotRegisteredError) Error() string {
+	return fmt.Sprintf("command handler not registered for command %s", reflect.TypeOf(cnre.c).String())
+}
+
 func HandleCommand[T any](cr *CommandRegistry, c T) error {
-	ch := cr.commandHandlers[reflect.TypeOf(c).String()].(CommandHandler[T])
+	tryCommandHandlerh, ok := cr.commandHandlers[reflect.TypeOf(c).String()]
+	if !ok {
+		return &CommandNotRegisteredError{c: c}
+	}
+	ch := tryCommandHandlerh.(CommandHandler[T])
 	return ch(c)
 }

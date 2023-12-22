@@ -15,30 +15,30 @@ const (
 
 type RepositoriesSetup func(container *Container, uow Worker)
 
-type PersistenceFn func(e Entity) error
+type MutationFn func(e Entity) error
 type FetchOneFn func(id string) (Entity, error)
 type FetchManyFn func(filters ...Filter) ([]Entity, error)
 
 type StorageMapper struct {
-	persistenceFns map[string]PersistenceFn
-	fetchOneFns    map[string]FetchOneFn
-	fetchManyFns   map[string]FetchManyFn
+	mutationFns  map[string]MutationFn
+	fetchOneFns  map[string]FetchOneFn
+	fetchManyFns map[string]FetchManyFn
 }
 
-func NewStorageMapper() *StorageMapper {
+func newStorageMapper() *StorageMapper {
 	return &StorageMapper{
-		persistenceFns: make(map[string]PersistenceFn),
-		fetchOneFns:    make(map[string]FetchOneFn),
-		fetchManyFns:   make(map[string]FetchManyFn),
+		mutationFns:  make(map[string]MutationFn),
+		fetchOneFns:  make(map[string]FetchOneFn),
+		fetchManyFns: make(map[string]FetchManyFn),
 	}
 }
 
-func (sm *StorageMapper) AddPersistenceFn(t reflect.Type, entityType int, fn PersistenceFn) {
-	sm.persistenceFns[fmt.Sprintf("%s-%d", t.String(), entityType)] = fn
+func (sm *StorageMapper) AddMutationFn(t reflect.Type, entityType int, fn MutationFn) {
+	sm.mutationFns[fmt.Sprintf("%s-%d", t.String(), entityType)] = fn
 }
 
-func (sm *StorageMapper) GetPersistenceFn(t reflect.Type, entityType int) PersistenceFn {
-	return sm.persistenceFns[fmt.Sprintf("%s-%d", t.String(), entityType)]
+func (sm *StorageMapper) GetMutationFn(t reflect.Type, entityType int) MutationFn {
+	return sm.mutationFns[fmt.Sprintf("%s-%d", t.String(), entityType)]
 }
 
 func (sm *StorageMapper) AddFetchOneFn(t reflect.Type, fn FetchOneFn) {

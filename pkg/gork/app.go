@@ -11,7 +11,7 @@ import (
 type App struct {
 	container         *Container
 	storageMapper     *StorageMapper
-	setupRepositories RepositoriesSetup
+	repositoriesSetup RepositoriesSetup
 	eventPublisher    *EventPublisher
 
 	commandRegistry *cqrs.CommandRegistry
@@ -22,9 +22,9 @@ type App struct {
 }
 
 func NewApp(commandHandlersSetup CommandHandlersSetup, queryHandlersSetup QueryHandlersSetup) *App {
-	container := NewContainer()
-	storageMapper := NewStorageMapper()
-	AddService[*EventPublisher](container, func(*Container) *EventPublisher { return NewPublisher() })
+	container := newContainer()
+	storageMapper := newStorageMapper()
+	AddService[*EventPublisher](container, func(*Container) *EventPublisher { return newPublisher() })
 	eventPublisher := GetService[*EventPublisher](container)
 
 	return &App{
@@ -40,7 +40,7 @@ func NewApp(commandHandlersSetup CommandHandlersSetup, queryHandlersSetup QueryH
 func (app *App) Start(
 	servicesSetup ServicesSetup,
 	repositoriesSetup RepositoriesSetup,
-	dataMapperSetup DataMapperSetup,
+	dataMapperSetup StorageMapperSetup,
 	eventPublisherSetup EventPublisherSetup) {
 
 	servicesSetup(app.container)
@@ -62,19 +62,15 @@ func HandleQuery[Q, R any](app *App, q Q) (R, error) {
 }
 
 func (app *App) GrpcServer(options ...grpc.ServerOption) *grpc.Server {
-	interceptor := WithCommitAndNotifyInterceptor(app.container, app.setupRepositories, app.storageMapper)
+	interceptor := WithCommitAndNotifyInterceptor(app.container, app.repositoriesSetup, app.storageMapper)
 	options = append(options, interceptor)
 	s := grpc.NewServer(options...)
 
 	return s
 }
 
-func (app *App) httpMiddleware(h http.Handler) http.Handler {
-	middleware := WithCommitAndNotifyMiddleware(app.container, app.setupRepositories, app.storageMapper)
-	return middleware(h)
-}
-
 func (app *App) HttpListenAndServe(port string, h http.Handler) error {
-	gorkHandler := app.httpMiddleware(h)
+	middleware := WithCommitAndNotifyMiddleware(app.container, app.repositoriesSetup, app.storageMapper)
+	gorkHandler := middleware(h)
 	return http.ListenAndServe(port, gorkHandler)
 }
