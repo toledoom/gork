@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func WithCommitAndNotifyInterceptor(container *Container, setupRepositories RepositoriesSetup, storageMapper *StorageMapper) grpc.ServerOption {
+func withCommitAndNotifyInterceptor(container *Container, setupRepositories RepositoriesSetup, storageMapper *StorageMapper) grpc.ServerOption {
 	return grpc.UnaryInterceptor(wrapper(container, setupRepositories, storageMapper))
 }
 

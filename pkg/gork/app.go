@@ -62,7 +62,7 @@ func HandleQuery[Q, R any](app *App, q Q) (R, error) {
 }
 
 func (app *App) GrpcServer(options ...grpc.ServerOption) *grpc.Server {
-	interceptor := WithCommitAndNotifyInterceptor(app.container, app.repositoriesSetup, app.storageMapper)
+	interceptor := withCommitAndNotifyInterceptor(app.container, app.repositoriesSetup, app.storageMapper)
 	options = append(options, interceptor)
 	s := grpc.NewServer(options...)
 
@@ -70,7 +70,7 @@ func (app *App) GrpcServer(options ...grpc.ServerOption) *grpc.Server {
 }
 
 func (app *App) HttpListenAndServe(port string, h http.Handler) error {
-	middleware := WithCommitAndNotifyMiddleware(app.container, app.repositoriesSetup, app.storageMapper)
+	middleware := withCommitAndNotifyMiddleware(app.container, app.repositoriesSetup, app.storageMapper)
 	gorkHandler := middleware(h)
 	return http.ListenAndServe(port, gorkHandler)
 }

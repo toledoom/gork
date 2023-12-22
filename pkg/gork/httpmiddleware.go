@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func WithCommitAndNotifyMiddleware(container *Container, setupRepositories RepositoriesSetup, storageMapper *StorageMapper) func(http.Handler) http.Handler {
+func withCommitAndNotifyMiddleware(container *Container, setupRepositories RepositoriesSetup, storageMapper *StorageMapper) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			uow := NewUnitOfWork(storageMapper)
