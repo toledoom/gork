@@ -7,7 +7,7 @@ import (
 func withCommitAndNotifyMiddleware(container *Container, setupRepositories RepositoriesSetup, storageMapper *StorageMapper) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			uow := NewUnitOfWork(storageMapper)
+			uow := newUnitOfWork(storageMapper)
 			setupRepositories(container, uow)
 
 			next.ServeHTTP(w, r)

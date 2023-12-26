@@ -89,14 +89,14 @@ func SetupQueryHandlers(container *gork.Container, qr *cqrs.QueryRegistry) {
 	)
 }
 
-func SetupDataMapper(dataMapper *gork.StorageMapper, container *gork.Container) {
-	dataMapper.AddMutationFn(reflect.TypeOf(battledomain.Battle{}), gork.CreationQuery, gork.GetService[*battle.DynamoStorage](container).Add)
-	dataMapper.AddMutationFn(reflect.TypeOf(battledomain.Battle{}), gork.UpdateQuery, gork.GetService[*battle.DynamoStorage](container).Update)
-	dataMapper.AddFetchOneFn(reflect.TypeOf(battledomain.Battle{}), gork.GetService[*battle.DynamoStorage](container).GetByID)
+func SetupStorageMapper(storageMapper *gork.StorageMapper, container *gork.Container) {
+	storageMapper.AddMutationFn(reflect.TypeOf(battledomain.Battle{}), gork.CreationQuery, gork.GetService[*battle.DynamoStorage](container).Add)
+	storageMapper.AddMutationFn(reflect.TypeOf(battledomain.Battle{}), gork.UpdateQuery, gork.GetService[*battle.DynamoStorage](container).Update)
+	storageMapper.AddFetchOneFn(reflect.TypeOf(battledomain.Battle{}), gork.GetService[*battle.DynamoStorage](container).GetByID)
 
-	dataMapper.AddMutationFn(reflect.TypeOf(playerdomain.Player{}), gork.CreationQuery, gork.GetService[*player.DynamoStorage](container).Add)
-	dataMapper.AddMutationFn(reflect.TypeOf(playerdomain.Player{}), gork.UpdateQuery, gork.GetService[*player.DynamoStorage](container).Update)
-	dataMapper.AddFetchOneFn(reflect.TypeOf(playerdomain.Player{}), gork.GetService[*player.DynamoStorage](container).GetByID)
+	storageMapper.AddMutationFn(reflect.TypeOf(playerdomain.Player{}), gork.CreationQuery, gork.GetService[*player.DynamoStorage](container).Add)
+	storageMapper.AddMutationFn(reflect.TypeOf(playerdomain.Player{}), gork.UpdateQuery, gork.GetService[*player.DynamoStorage](container).Update)
+	storageMapper.AddFetchOneFn(reflect.TypeOf(playerdomain.Player{}), gork.GetService[*player.DynamoStorage](container).GetByID)
 }
 
 func SetupEventPublisher(eventPublisher *gork.EventPublisher, container *gork.Container) {

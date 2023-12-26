@@ -10,7 +10,7 @@ import (
 
 func main() {
 	a := gork.NewApp(app.SetupCommandHandlers, app.SetupQueryHandlers)
-	a.Start(app.SetupServices, app.SetupRepositories, app.SetupDataMapper, app.SetupEventPublisher)
+	a.Start(app.SetupServices, app.SetupRepositories, app.SetupStorageMapper, app.SetupEventPublisher)
 
 	httpApi := httpport.NewApi(a)
 

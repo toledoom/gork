@@ -20,12 +20,12 @@ type Filter interface { // TODO: Think about implementations of actual filters
 
 type UnitOfWork struct {
 	newEntities, dirtyEntities, deletedEntities []Entity
-	dataMapper                                  *StorageMapper
+	storageMapper                               *StorageMapper
 }
 
-func NewUnitOfWork(datamapper *StorageMapper) *UnitOfWork {
+func newUnitOfWork(storagemapper *StorageMapper) *UnitOfWork {
 	return &UnitOfWork{
-		dataMapper: datamapper,
+		storageMapper: storagemapper,
 	}
 }
 
@@ -45,18 +45,18 @@ func (uow *UnitOfWork) RegisterDeleted(deletedEntity Entity) error {
 }
 
 func (uow *UnitOfWork) FetchOne(t reflect.Type, id string) (Entity, error) {
-	fn := uow.dataMapper.GetFetchOneFn(t)
+	fn := uow.storageMapper.GetFetchOneFn(t)
 	return fn(id)
 }
 
 func (uow *UnitOfWork) FetchMany(t reflect.Type, filters ...Filter) ([]Entity, error) {
-	fn := uow.dataMapper.GetFetchManyFn(t)
+	fn := uow.storageMapper.GetFetchManyFn(t)
 	return fn(filters...)
 }
 
 func (uow *UnitOfWork) Commit() error {
 	for _, en := range uow.newEntities {
-		fn := uow.dataMapper.GetMutationFn(reflect.TypeOf(en), CreationQuery)
+		fn := uow.storageMapper.GetMutationFn(reflect.TypeOf(en), CreationQuery)
 		err := fn(en)
 		if err != nil {
 			return nil
@@ -64,7 +64,7 @@ func (uow *UnitOfWork) Commit() error {
 	}
 
 	for _, en := range uow.dirtyEntities {
-		fn := uow.dataMapper.GetMutationFn(reflect.TypeOf(en), UpdateQuery)
+		fn := uow.storageMapper.GetMutationFn(reflect.TypeOf(en), UpdateQuery)
 		err := fn(en)
 		if err != nil {
 			return nil
@@ -72,7 +72,7 @@ func (uow *UnitOfWork) Commit() error {
 	}
 
 	for _, en := range uow.deletedEntities {
-		fn := uow.dataMapper.GetMutationFn(reflect.TypeOf(en), DeletionQuery)
+		fn := uow.storageMapper.GetMutationFn(reflect.TypeOf(en), DeletionQuery)
 		err := fn(en)
 		if err != nil {
 			return nil

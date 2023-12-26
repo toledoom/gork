@@ -12,7 +12,7 @@ func withCommitAndNotifyInterceptor(container *Container, setupRepositories Repo
 
 func wrapper(container *Container, setupRepositories RepositoriesSetup, storageMapper *StorageMapper) func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		uow := NewUnitOfWork(storageMapper)
+		uow := newUnitOfWork(storageMapper)
 		setupRepositories(container, uow)
 
 		// Calls the handler
