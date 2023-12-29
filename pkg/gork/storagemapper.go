@@ -13,8 +13,6 @@ const (
 	FetchManyQuery
 )
 
-type RepositoriesSetup func(container *Container, uow Worker)
-
 type MutationFn func(e Entity) error
 type FetchOneFn func(id string) (Entity, error)
 type FetchManyFn func(filters ...Filter) ([]Entity, error)
