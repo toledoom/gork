@@ -6,11 +6,11 @@ import (
 	"google.golang.org/grpc"
 )
 
-func WithCommitAndNotifyInterceptor(app *App, setupRepositories RepositoriesSetup, storageMapper *StorageMapper) grpc.ServerOption {
-	return grpc.UnaryInterceptor(wrapper(app, setupRepositories, storageMapper))
+func WithCommitAndNotifyInterceptor(app *App, storageMapper *StorageMapper) grpc.ServerOption {
+	return grpc.UnaryInterceptor(wrapper(app, storageMapper))
 }
 
-func wrapper(app *App, setupRepositories RepositoriesSetup, storageMapper *StorageMapper) func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func wrapper(app *App, storageMapper *StorageMapper) func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		uow := newUnitOfWork(storageMapper)
 		app.SetupCommandsAndQueries(uow)
