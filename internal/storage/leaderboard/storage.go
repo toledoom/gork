@@ -20,13 +20,13 @@ func NewRedisRanking(c *redis.Client, name string) *RedisRanking {
 	}
 }
 
-func (r *RedisRanking) GetRank(playerID string) (int64, error) {
+func (r *RedisRanking) GetRank(playerID string) (uint64, error) {
 	zRank := r.c.ZRank(context.TODO(), r.name, playerID)
 	if zRank.Err() != redis.Nil {
 		return 0, zRank.Err()
 	}
 
-	return zRank.Val(), nil
+	return uint64(zRank.Val()), nil
 }
 
 func (r *RedisRanking) GetTopPlayers(limit int64) ([]domain.Member, error) {

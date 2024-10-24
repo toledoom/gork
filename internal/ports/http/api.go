@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/toledoom/gork/internal/app/command"
 	"github.com/toledoom/gork/internal/app/query"
+	"github.com/toledoom/gork/internal/app/usecases"
 	"github.com/toledoom/gork/internal/ports/grpc/proto/battle"
 	"github.com/toledoom/gork/internal/ports/grpc/proto/leaderboard"
 	"github.com/toledoom/gork/internal/ports/grpc/proto/player"
@@ -57,29 +58,24 @@ func (api *Api) FinishBattleHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	c := &command.FinishBattle{
+
+	uc := &usecases.FinishBattleUseCase{
+		Cr: nil, //TODO: Inject the registries
+		Qr: nil,
+	}
+	input := usecases.FinishBattleInput{
 		BattleID: finishBattleReq.BattleId,
 		WinnerID: finishBattleReq.WinnerId,
 	}
-
-	err = gork.HandleCommand[*command.FinishBattle](api.app, c)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	q := &query.GetBattleResult{
-		BattleID: finishBattleReq.BattleId,
-	}
-	gbrr, err := gork.HandleQuery[*query.GetBattleResult, *query.GetBattleResultResponse](api.app, q)
+	ucOutput, err := gork.ExecuteUseCase(uc, input)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	resp := &battle.FinishBattleResponse{
-		Player1Score: gbrr.Player1Score,
-		Player2Score: gbrr.Player2Score,
+		Player1Score: ucOutput.Player1Score,
+		Player2Score: ucOutput.Player2Score,
 	}
 	marshalledResp, _ := protojson.Marshal(resp)
 	w.Write(marshalledResp)

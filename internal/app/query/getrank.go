@@ -11,7 +11,7 @@ type GetRank struct {
 }
 
 type GetRankResponse struct {
-	Rank int64
+	Rank uint64
 }
 
 func GetRankHandler(ranking leaderboard.Ranking) func(*GetRank) (*GetRankResponse, error) {

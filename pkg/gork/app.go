@@ -52,14 +52,6 @@ func (app *App) Start(
 	app.commandRegistry = cqrs.NewCommandRegistry()
 }
 
-func HandleCommand[T any](app *App, c T) error {
-	return cqrs.HandleCommand[T](app.commandRegistry, c)
-}
-
-func HandleQuery[Q, R any](app *App, q Q) (R, error) {
-	return cqrs.HandleQuery[Q, R](app.queryRegistry, q)
-}
-
 func (app *App) SetupCommandsAndQueries(unitOfWork Worker) {
 	app.repositoriesSetup(app.container, unitOfWork)
 	app.queryHandlersSetup(app.container, app.queryRegistry)
@@ -78,4 +70,20 @@ func (app *App) HttpListenAndServe(port string, h http.Handler) error {
 	middleware := WithCommitAndNotifyMiddleware(app, app.storageMapper)
 	gorkHandler := middleware(h)
 	return http.ListenAndServe(port, gorkHandler)
+}
+
+func HandleCommand[T any](app *App, c T) error {
+	return cqrs.HandleCommand[T](app.commandRegistry, c)
+}
+
+func HandleQuery[Q, R any](app *App, q Q) (R, error) {
+	return cqrs.HandleQuery[Q, R](app.queryRegistry, q)
+}
+
+type UseCase[I any, O any] interface {
+	Execute(I) (O, error)
+}
+
+func ExecuteUseCase[I any, O any](uc UseCase[I, O], input I) (O, error) {
+	return uc.Execute(input)
 }
