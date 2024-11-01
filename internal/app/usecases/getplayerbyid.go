@@ -6,10 +6,6 @@ import (
 	"github.com/toledoom/gork/pkg/gork/cqrs"
 )
 
-type GetPlayerByIDUseCase struct {
-	qr *cqrs.QueryRegistry
-}
-
 type GetPlayerByIDInput struct {
 	PlayerID string
 }
@@ -18,16 +14,18 @@ type GetPlayerByIDOutput struct {
 	Player *player.Player
 }
 
-func (gpbiuc *GetPlayerByIDUseCase) Execute(gpbii GetPlayerByIDInput) (GetPlayerByIDOutput, error) {
-	q := query.GetPlayerByID{
-		PlayerID: gpbii.PlayerID,
-	}
-	response, err := cqrs.HandleQuery[*query.GetPlayerByID, *query.GetPlayerByIDResponse](gpbiuc.qr, &q)
-	if err != nil {
-		return GetPlayerByIDOutput{}, err
-	}
+func GetPlayerByID(qr *cqrs.QueryRegistry) func(gpbid GetPlayerByIDInput) (GetPlayerByIDOutput, error) {
+	return func(gpbid GetPlayerByIDInput) (GetPlayerByIDOutput, error) {
+		q := query.GetPlayerByID{
+			PlayerID: gpbid.PlayerID,
+		}
+		response, err := cqrs.HandleQuery[*query.GetPlayerByID, *query.GetPlayerByIDResponse](qr, &q)
+		if err != nil {
+			return GetPlayerByIDOutput{}, err
+		}
 
-	return GetPlayerByIDOutput{
-		Player: response.Player,
-	}, nil
+		return GetPlayerByIDOutput{
+			Player: response.Player,
+		}, nil
+	}
 }

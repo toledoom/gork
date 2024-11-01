@@ -12,6 +12,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/toledoom/gork/internal/app/command"
 	"github.com/toledoom/gork/internal/app/query"
+	"github.com/toledoom/gork/internal/app/usecases"
 	battledomain "github.com/toledoom/gork/internal/domain/battle"
 	leaderboarddomain "github.com/toledoom/gork/internal/domain/leaderboard"
 	playerdomain "github.com/toledoom/gork/internal/domain/player"
@@ -23,52 +24,74 @@ import (
 )
 
 func SetupServices(container *gork.Container) {
-	gork.AddService[*redis.Client](container, func(*gork.Container) *redis.Client {
+	gork.AddService(container, func(c *gork.Container) gork.Worker {
+		return gork.NewUnitOfWork(gork.GetService[*gork.StorageMapper](c))
+	}, gork.USECASE_SCOPE)
+
+	gork.AddService(container, func(c *gork.Container) playerdomain.Repository {
+		return player.NewUowRepository(gork.GetService[gork.Worker](c))
+	}, gork.USECASE_SCOPE)
+
+	gork.AddService(container, func(c *gork.Container) battledomain.Repository {
+		return battle.NewUowRepository(gork.GetService[gork.Worker](c))
+	}, gork.USECASE_SCOPE)
+
+	gork.AddService(container, func(c *gork.Container) *gork.EventPublisher {
+		eventPublisher := gork.NewPublisher()
+		r := gork.GetService[leaderboarddomain.Ranking](c)
+		eventPublisher.Subscribe(leaderboarddomain.NewPlayerScoreUpdatedEventHandler(r), &playerdomain.ScoreUpdatedEvent{})
+		return eventPublisher
+	}, gork.USECASE_SCOPE)
+
+	gork.AddService(container, func(c *gork.Container) *gork.StorageMapper {
+		storageMapper := gork.NewStorageMapper()
+		storageMapper.AddMutationFn(reflect.TypeOf(battledomain.Battle{}), gork.CreationQuery, gork.GetService[*battle.DynamoStorage](c).Add)
+		storageMapper.AddMutationFn(reflect.TypeOf(battledomain.Battle{}), gork.UpdateQuery, gork.GetService[*battle.DynamoStorage](c).Update)
+		storageMapper.AddFetchOneFn(reflect.TypeOf(battledomain.Battle{}), gork.GetService[*battle.DynamoStorage](c).GetByID)
+
+		storageMapper.AddMutationFn(reflect.TypeOf(playerdomain.Player{}), gork.CreationQuery, gork.GetService[*player.DynamoStorage](c).Add)
+		storageMapper.AddMutationFn(reflect.TypeOf(playerdomain.Player{}), gork.UpdateQuery, gork.GetService[*player.DynamoStorage](c).Update)
+		storageMapper.AddFetchOneFn(reflect.TypeOf(playerdomain.Player{}), gork.GetService[*player.DynamoStorage](c).GetByID)
+		return storageMapper
+	}, gork.SERVER_SCOPE)
+
+	gork.AddService(container, func(*gork.Container) *redis.Client {
 		return createRedisLocalClient(os.Getenv("REDIS_ADDR"))
-	})
-	gork.AddService[leaderboarddomain.Ranking](container, func(*gork.Container) leaderboarddomain.Ranking {
-		redisClient := gork.GetService[*redis.Client](container)
+	}, gork.SERVER_SCOPE)
+	gork.AddService(container, func(c *gork.Container) leaderboarddomain.Ranking {
+		redisClient := gork.GetService[*redis.Client](c)
 		return leaderboard.NewRedisRanking(redisClient, "my-ranking")
-	})
-	gork.AddService[*dynamodb.Client](container, func(*gork.Container) *dynamodb.Client {
+	}, gork.SERVER_SCOPE)
+	gork.AddService(container, func(*gork.Container) *dynamodb.Client {
 		return createDynamoDBLocalClient(os.Getenv("DYNAMO_ADDR"))
-	})
-	gork.AddService[battledomain.ScoreCalculator](container, func(*gork.Container) battledomain.ScoreCalculator {
+	}, gork.SERVER_SCOPE)
+	gork.AddService(container, func(*gork.Container) battledomain.ScoreCalculator {
 		// A better idea would be to retrieve these next values from a config repository, since they may vary
 		// depending on several factors (e.g. players levels). In that case, the solution would be to create a
 		// a config repository and inject it as a dependency into the score calculator
 		k := int64(20)
 		s := int64(400)
 		return battledomain.NewEloScoreCalculator(k, s)
-	})
-	gork.AddService[*battle.DynamoStorage](container, func(*gork.Container) *battle.DynamoStorage {
-		return battle.NewDynamoStorage(gork.GetService[*dynamodb.Client](container))
-	})
-	gork.AddService[*player.DynamoStorage](container, func(*gork.Container) *player.DynamoStorage {
-		return player.NewDynamoStorage(gork.GetService[*dynamodb.Client](container))
-	})
-}
-
-func SetupRepositories(container *gork.Container, uow gork.Worker) {
-	gork.AddService[playerdomain.Repository](container, func(*gork.Container) playerdomain.Repository {
-		return player.NewUowRepository(uow)
-	})
-	gork.AddService[battledomain.Repository](container, func(*gork.Container) battledomain.Repository {
-		return battle.NewUowRepository(uow)
-	})
+	}, gork.SERVER_SCOPE)
+	gork.AddService(container, func(c *gork.Container) *battle.DynamoStorage {
+		return battle.NewDynamoStorage(gork.GetService[*dynamodb.Client](c))
+	}, gork.SERVER_SCOPE)
+	gork.AddService(container, func(c *gork.Container) *player.DynamoStorage {
+		return player.NewDynamoStorage(gork.GetService[*dynamodb.Client](c))
+	}, gork.SERVER_SCOPE)
 }
 
 func SetupCommandHandlers(container *gork.Container, cr *cqrs.CommandRegistry) {
-	cqrs.RegisterCommandHandler[*command.CreatePlayer](
+	cqrs.RegisterCommandHandler(
 		cr, command.CreatePlayerHandler(gork.GetService[playerdomain.Repository](container)),
 	)
-	cqrs.RegisterCommandHandler[*command.StartBattle](
+	cqrs.RegisterCommandHandler(
 		cr, command.StartBattleHandler(
 			gork.GetService[battledomain.Repository](container),
 			gork.GetService[playerdomain.Repository](container),
 		),
 	)
-	cqrs.RegisterCommandHandler[*command.FinishBattle](
+	cqrs.RegisterCommandHandler(
 		cr, command.FinishBattleHandler(
 			gork.GetService[battledomain.Repository](container),
 			gork.GetService[playerdomain.Repository](container),
@@ -78,25 +101,19 @@ func SetupCommandHandlers(container *gork.Container, cr *cqrs.CommandRegistry) {
 }
 
 func SetupQueryHandlers(container *gork.Container, qr *cqrs.QueryRegistry) {
-	cqrs.RegisterQueryHandler[*query.GetRank, *query.GetRankResponse](
-		qr, query.GetRankHandler(gork.GetService[leaderboarddomain.Ranking](container)),
-	)
-	cqrs.RegisterQueryHandler[*query.GetTopPlayers, *query.GetTopPlayersResponse](
-		qr, query.GetTopPlayersHandler(gork.GetService[leaderboarddomain.Ranking](container)),
-	)
-	cqrs.RegisterQueryHandler[*query.GetPlayerByID, *query.GetPlayerByIDResponse](
-		qr, query.GetPlayerByIDHandler(gork.GetService[playerdomain.Repository](container)),
-	)
+	cqrs.RegisterQueryHandler(qr, query.GetRankHandler(gork.GetService[leaderboarddomain.Ranking](container)))
+	cqrs.RegisterQueryHandler(qr, query.GetTopPlayersHandler(gork.GetService[leaderboarddomain.Ranking](container)))
+	cqrs.RegisterQueryHandler(qr, query.GetPlayerByIDHandler(gork.GetService[playerdomain.Repository](container)))
+	cqrs.RegisterQueryHandler(qr, query.GetBattleResultHandler(gork.GetService[battledomain.Repository](container)))
 }
 
-func SetupStorageMapper(storageMapper *gork.StorageMapper, container *gork.Container) {
-	storageMapper.AddMutationFn(reflect.TypeOf(battledomain.Battle{}), gork.CreationQuery, gork.GetService[*battle.DynamoStorage](container).Add)
-	storageMapper.AddMutationFn(reflect.TypeOf(battledomain.Battle{}), gork.UpdateQuery, gork.GetService[*battle.DynamoStorage](container).Update)
-	storageMapper.AddFetchOneFn(reflect.TypeOf(battledomain.Battle{}), gork.GetService[*battle.DynamoStorage](container).GetByID)
-
-	storageMapper.AddMutationFn(reflect.TypeOf(playerdomain.Player{}), gork.CreationQuery, gork.GetService[*player.DynamoStorage](container).Add)
-	storageMapper.AddMutationFn(reflect.TypeOf(playerdomain.Player{}), gork.UpdateQuery, gork.GetService[*player.DynamoStorage](container).Update)
-	storageMapper.AddFetchOneFn(reflect.TypeOf(playerdomain.Player{}), gork.GetService[*player.DynamoStorage](container).GetByID)
+func SetupUseCases(ucr *gork.UseCaseRegistry, cr *cqrs.CommandRegistry, qr *cqrs.QueryRegistry) {
+	gork.RegisterUseCase(ucr, usecases.CreatePlayer(cr, qr))
+	gork.RegisterUseCase(ucr, usecases.FinishBattle(cr, qr))
+	gork.RegisterUseCase(ucr, usecases.GetPlayerByID(qr))
+	gork.RegisterUseCase(ucr, usecases.GetRank(qr))
+	gork.RegisterUseCase(ucr, usecases.GetTopPlayers(qr))
+	gork.RegisterUseCase(ucr, usecases.StartBattle(cr))
 }
 
 func SetupEventPublisher(eventPublisher *gork.EventPublisher, container *gork.Container) {

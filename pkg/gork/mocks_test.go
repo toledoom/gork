@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/toledoom/gork/pkg/gork"
+	"github.com/toledoom/gork/pkg/gork/cqrs"
 )
 
 type dumbCommand struct {
@@ -72,4 +73,31 @@ type dumbEntity struct {
 	ag *gork.Aggregate
 
 	ID string
+}
+
+func dumbUseCase(cr *cqrs.CommandRegistry, qr *cqrs.QueryRegistry) func(dumbUseCaseInput) (dumbUseCaseOutput, error) {
+	return func(dumbUseCaseInput) (dumbUseCaseOutput, error) {
+		dc := &dumbCommand{}
+
+		err := cqrs.HandleCommand(cr, dc)
+		if err != nil {
+			return dumbUseCaseOutput{}, err
+		}
+
+		dq := &dumbQuery{}
+		resp, err := cqrs.HandleQuery[*dumbQuery, string](qr, dq)
+		if err != nil {
+			return dumbUseCaseOutput{}, err
+		}
+
+		return dumbUseCaseOutput{
+			response: resp,
+		}, nil
+	}
+}
+
+type dumbUseCaseInput struct{}
+
+type dumbUseCaseOutput struct {
+	response string
 }

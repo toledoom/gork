@@ -5,10 +5,6 @@ import (
 	"github.com/toledoom/gork/pkg/gork/cqrs"
 )
 
-type GetRankUseCase struct {
-	qr *cqrs.QueryRegistry
-}
-
 type GetRankInput struct {
 	PlayerID string
 }
@@ -17,17 +13,20 @@ type GetRankOutput struct {
 	Rank uint64
 }
 
-func (gruc *GetRankUseCase) Execute(gri GetRankInput) (GetRankOutput, error) {
-	getRankQuery := query.GetRank{
-		PlayerID: gri.PlayerID,
-	}
+func GetRank(qr *cqrs.QueryRegistry) func(gri GetRankInput) (GetRankOutput, error) {
+	return func(gri GetRankInput) (GetRankOutput, error) {
+		getRankQuery := query.GetRank{
+			PlayerID: gri.PlayerID,
+		}
 
-	queryResponse, err := cqrs.HandleQuery[*query.GetRank, *query.GetRankResponse](gruc.qr, &getRankQuery)
-	if err != nil {
-		return GetRankOutput{}, err
-	}
+		queryResponse, err := cqrs.HandleQuery[*query.GetRank, *query.GetRankResponse](qr, &getRankQuery)
+		if err != nil {
+			return GetRankOutput{}, err
+		}
 
-	return GetRankOutput{
-		Rank: queryResponse.Rank,
-	}, nil
+		return GetRankOutput{
+			Rank: queryResponse.Rank,
+		}, nil
+
+	}
 }

@@ -23,7 +23,7 @@ type StorageMapper struct {
 	fetchManyFns map[string]FetchManyFn
 }
 
-func newStorageMapper() *StorageMapper {
+func NewStorageMapper() *StorageMapper {
 	return &StorageMapper{
 		mutationFns:  make(map[string]MutationFn),
 		fetchOneFns:  make(map[string]FetchOneFn),

@@ -1,6 +1,11 @@
 package main
 
 import (
+	"errors"
+	"fmt"
+	"net/http"
+	"os"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/toledoom/gork/internal/app"
@@ -9,8 +14,8 @@ import (
 )
 
 func main() {
-	a := gork.NewApp(app.SetupCommandHandlers, app.SetupQueryHandlers)
-	a.Start(app.SetupServices, app.SetupRepositories, app.SetupStorageMapper, app.SetupEventPublisher)
+	a := gork.NewApp(app.SetupUseCases, app.SetupCommandHandlers, app.SetupQueryHandlers)
+	a.Start(app.SetupServices)
 
 	httpApi := httpport.NewApi(a)
 
@@ -24,5 +29,11 @@ func main() {
 	r.Get("/rank/top_players", httpApi.GetTopPlayersHandler)
 	/////////////////////
 
-	a.HttpListenAndServe(":8080", r)
+	err := http.ListenAndServe(":8080", r)
+	if errors.Is(err, http.ErrServerClosed) {
+		fmt.Printf("server closed\n")
+	} else if err != nil {
+		fmt.Printf("error starting server: %s\n", err)
+		os.Exit(1)
+	}
 }

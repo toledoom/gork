@@ -11,11 +11,12 @@ import (
 	"github.com/toledoom/gork/internal/ports/grpc/proto/leaderboard"
 	"github.com/toledoom/gork/internal/ports/grpc/proto/player"
 	"github.com/toledoom/gork/pkg/gork"
+	"google.golang.org/grpc"
 )
 
 func main() {
-	a := gork.NewApp(app.SetupCommandHandlers, app.SetupQueryHandlers)
-	a.Start(app.SetupServices, app.SetupRepositories, app.SetupStorageMapper, app.SetupEventPublisher)
+	a := gork.NewApp(app.SetupUseCases, app.SetupCommandHandlers, app.SetupQueryHandlers)
+	a.Start(app.SetupServices)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", 50051))
 	if err != nil {
@@ -23,8 +24,8 @@ func main() {
 	}
 
 	gameServer := grpcport.NewGameServer(a)
+	grpcServer := grpc.NewServer()
 
-	grpcServer := a.GrpcServer()
 	battle.RegisterBattleServer(grpcServer, gameServer)
 	leaderboard.RegisterLeaderboardServer(grpcServer, gameServer)
 	player.RegisterPlayerServer(grpcServer, gameServer)

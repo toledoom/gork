@@ -59,15 +59,11 @@ func (api *Api) FinishBattleHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uc := &usecases.FinishBattleUseCase{
-		Cr: nil, //TODO: Inject the registries
-		Qr: nil,
-	}
 	input := usecases.FinishBattleInput{
 		BattleID: finishBattleReq.BattleId,
 		WinnerID: finishBattleReq.WinnerId,
 	}
-	ucOutput, err := gork.ExecuteUseCase(uc, input)
+	ucOutput, err := gork.ExecuteUseCase[usecases.FinishBattleInput, usecases.FinishBattleOutput](api.app, input)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
