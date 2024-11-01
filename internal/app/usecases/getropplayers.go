@@ -3,7 +3,7 @@ package usecases
 import (
 	"github.com/toledoom/gork/internal/app/query"
 	"github.com/toledoom/gork/internal/domain/leaderboard"
-	"github.com/toledoom/gork/pkg/gork/cqrs"
+	"github.com/toledoom/gork/pkg/gork"
 )
 
 type GetTopPlayersInput struct {
@@ -14,13 +14,13 @@ type GetTopPlayersOutput struct {
 	MemberList []*leaderboard.Member
 }
 
-func GetTopPlayers(qr *cqrs.QueryRegistry) func(gtpi GetTopPlayersInput) (GetTopPlayersOutput, error) {
+func GetTopPlayers(qr *gork.QueryRegistry) func(gtpi GetTopPlayersInput) (GetTopPlayersOutput, error) {
 	return func(gtpi GetTopPlayersInput) (GetTopPlayersOutput, error) {
 		q := &query.GetTopPlayers{
 			NumPlayers: gtpi.NumPlayers,
 		}
 
-		response, err := cqrs.HandleQuery[*query.GetTopPlayers, *query.GetTopPlayersResponse](qr, q)
+		response, err := gork.HandleQuery[*query.GetTopPlayers, *query.GetTopPlayersResponse](qr, q)
 		if err != nil {
 			return GetTopPlayersOutput{}, nil
 		}

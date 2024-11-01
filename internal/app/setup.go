@@ -20,7 +20,6 @@ import (
 	"github.com/toledoom/gork/internal/storage/leaderboard"
 	"github.com/toledoom/gork/internal/storage/player"
 	"github.com/toledoom/gork/pkg/gork"
-	"github.com/toledoom/gork/pkg/gork/cqrs"
 )
 
 func SetupServices(container *gork.Container) {
@@ -81,17 +80,17 @@ func SetupServices(container *gork.Container) {
 	}, gork.SERVER_SCOPE)
 }
 
-func SetupCommandHandlers(container *gork.Container, cr *cqrs.CommandRegistry) {
-	cqrs.RegisterCommandHandler(
+func SetupCommandHandlers(container *gork.Container, cr *gork.CommandRegistry) {
+	gork.RegisterCommandHandler(
 		cr, command.CreatePlayerHandler(gork.GetService[playerdomain.Repository](container)),
 	)
-	cqrs.RegisterCommandHandler(
+	gork.RegisterCommandHandler(
 		cr, command.StartBattleHandler(
 			gork.GetService[battledomain.Repository](container),
 			gork.GetService[playerdomain.Repository](container),
 		),
 	)
-	cqrs.RegisterCommandHandler(
+	gork.RegisterCommandHandler(
 		cr, command.FinishBattleHandler(
 			gork.GetService[battledomain.Repository](container),
 			gork.GetService[playerdomain.Repository](container),
@@ -100,14 +99,14 @@ func SetupCommandHandlers(container *gork.Container, cr *cqrs.CommandRegistry) {
 	)
 }
 
-func SetupQueryHandlers(container *gork.Container, qr *cqrs.QueryRegistry) {
-	cqrs.RegisterQueryHandler(qr, query.GetRankHandler(gork.GetService[leaderboarddomain.Ranking](container)))
-	cqrs.RegisterQueryHandler(qr, query.GetTopPlayersHandler(gork.GetService[leaderboarddomain.Ranking](container)))
-	cqrs.RegisterQueryHandler(qr, query.GetPlayerByIDHandler(gork.GetService[playerdomain.Repository](container)))
-	cqrs.RegisterQueryHandler(qr, query.GetBattleResultHandler(gork.GetService[battledomain.Repository](container)))
+func SetupQueryHandlers(container *gork.Container, qr *gork.QueryRegistry) {
+	gork.RegisterQueryHandler(qr, query.GetRankHandler(gork.GetService[leaderboarddomain.Ranking](container)))
+	gork.RegisterQueryHandler(qr, query.GetTopPlayersHandler(gork.GetService[leaderboarddomain.Ranking](container)))
+	gork.RegisterQueryHandler(qr, query.GetPlayerByIDHandler(gork.GetService[playerdomain.Repository](container)))
+	gork.RegisterQueryHandler(qr, query.GetBattleResultHandler(gork.GetService[battledomain.Repository](container)))
 }
 
-func SetupUseCases(ucr *gork.UseCaseRegistry, cr *cqrs.CommandRegistry, qr *cqrs.QueryRegistry) {
+func SetupUseCases(ucr *gork.UseCaseRegistry, cr *gork.CommandRegistry, qr *gork.QueryRegistry) {
 	gork.RegisterUseCase(ucr, usecases.CreatePlayer(cr, qr))
 	gork.RegisterUseCase(ucr, usecases.FinishBattle(cr, qr))
 	gork.RegisterUseCase(ucr, usecases.GetPlayerByID(qr))

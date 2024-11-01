@@ -2,7 +2,7 @@ package usecases
 
 import (
 	"github.com/toledoom/gork/internal/app/command"
-	"github.com/toledoom/gork/pkg/gork/cqrs"
+	"github.com/toledoom/gork/pkg/gork"
 )
 
 type StartBattleInput struct {
@@ -12,14 +12,14 @@ type StartBattleInput struct {
 type StartBattleOutput struct {
 }
 
-func StartBattle(cr *cqrs.CommandRegistry) func(sbi StartBattleInput) (StartBattleOutput, error) {
+func StartBattle(cr *gork.CommandRegistry) func(sbi StartBattleInput) (StartBattleOutput, error) {
 	return func(sbi StartBattleInput) (StartBattleOutput, error) {
 		startBattleCommand := command.StartBattle{
 			BattleID:  sbi.BattleID,
 			Player1ID: sbi.Player1ID,
 			Player2ID: sbi.Player2ID,
 		}
-		err := cqrs.HandleCommand(cr, &startBattleCommand)
+		err := gork.HandleCommand(cr, &startBattleCommand)
 		if err != nil {
 			return StartBattleOutput{}, nil
 		}

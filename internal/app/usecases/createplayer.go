@@ -4,7 +4,7 @@ import (
 	"github.com/toledoom/gork/internal/app/command"
 	"github.com/toledoom/gork/internal/app/query"
 	"github.com/toledoom/gork/internal/domain/player"
-	"github.com/toledoom/gork/pkg/gork/cqrs"
+	"github.com/toledoom/gork/pkg/gork"
 )
 
 type CreatePlayerInput struct {
@@ -15,14 +15,14 @@ type CreatePlayerOutput struct {
 	Player player.Player
 }
 
-func CreatePlayer(cr *cqrs.CommandRegistry, qr *cqrs.QueryRegistry) func(cpi CreatePlayerInput) (CreatePlayerOutput, error) {
+func CreatePlayer(cr *gork.CommandRegistry, qr *gork.QueryRegistry) func(cpi CreatePlayerInput) (CreatePlayerOutput, error) {
 	return func(cpi CreatePlayerInput) (CreatePlayerOutput, error) {
 		createPlayerCommand := command.CreatePlayer{
 			PlayerID: cpi.PlayerID,
 			Name:     cpi.Name,
 		}
 
-		err := cqrs.HandleCommand(cr, &createPlayerCommand)
+		err := gork.HandleCommand(cr, &createPlayerCommand)
 		if err != nil {
 			return CreatePlayerOutput{}, err
 		}
@@ -31,7 +31,7 @@ func CreatePlayer(cr *cqrs.CommandRegistry, qr *cqrs.QueryRegistry) func(cpi Cre
 			PlayerID: cpi.PlayerID,
 		}
 
-		queryResponse, err := cqrs.HandleQuery[*query.GetPlayerByID, *query.GetPlayerByIDResponse](qr, &getPlayerQuery)
+		queryResponse, err := gork.HandleQuery[*query.GetPlayerByID, *query.GetPlayerByIDResponse](qr, &getPlayerQuery)
 		if err != nil {
 			return CreatePlayerOutput{}, err
 		}

@@ -4,7 +4,6 @@ import (
 	"reflect"
 
 	"github.com/toledoom/gork/pkg/gork"
-	"github.com/toledoom/gork/pkg/gork/cqrs"
 )
 
 type dumbCommand struct {
@@ -75,17 +74,17 @@ type dumbEntity struct {
 	ID string
 }
 
-func dumbUseCase(cr *cqrs.CommandRegistry, qr *cqrs.QueryRegistry) func(dumbUseCaseInput) (dumbUseCaseOutput, error) {
+func dumbUseCase(cr *gork.CommandRegistry, qr *gork.QueryRegistry) func(dumbUseCaseInput) (dumbUseCaseOutput, error) {
 	return func(dumbUseCaseInput) (dumbUseCaseOutput, error) {
 		dc := &dumbCommand{}
 
-		err := cqrs.HandleCommand(cr, dc)
+		err := gork.HandleCommand(cr, dc)
 		if err != nil {
 			return dumbUseCaseOutput{}, err
 		}
 
 		dq := &dumbQuery{}
-		resp, err := cqrs.HandleQuery[*dumbQuery, string](qr, dq)
+		resp, err := gork.HandleQuery[*dumbQuery, string](qr, dq)
 		if err != nil {
 			return dumbUseCaseOutput{}, err
 		}

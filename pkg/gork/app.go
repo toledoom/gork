@@ -1,14 +1,10 @@
 package gork
 
-import (
-	"github.com/toledoom/gork/pkg/gork/cqrs"
-)
-
 type App struct {
 	container *Container
 
-	commandRegistry *cqrs.CommandRegistry
-	queryRegistry   *cqrs.QueryRegistry
+	commandRegistry *CommandRegistry
+	queryRegistry   *QueryRegistry
 	useCaseRegistry *UseCaseRegistry
 
 	commandHandlersSetup CommandHandlersSetup
@@ -34,8 +30,8 @@ func (app *App) Start(servicesSetup ServicesSetup) {
 
 	servicesSetup(app.container)
 
-	app.queryRegistry = cqrs.NewQueryRegistry()
-	app.commandRegistry = cqrs.NewCommandRegistry()
+	app.queryRegistry = NewQueryRegistry()
+	app.commandRegistry = NewCommandRegistry()
 	app.useCaseRegistry = NewUseCaseRegistry()
 
 	app.useCasesSetup(app.useCaseRegistry, app.commandRegistry, app.queryRegistry)
@@ -44,12 +40,4 @@ func (app *App) Start(servicesSetup ServicesSetup) {
 func (app *App) SetupCommandsAndQueries(unitOfWork Worker) {
 	app.queryHandlersSetup(app.container, app.queryRegistry)
 	app.commandHandlersSetup(app.container, app.commandRegistry)
-}
-
-func HandleCommand[T any](app *App, c T) error {
-	return cqrs.HandleCommand[T](app.commandRegistry, c)
-}
-
-func HandleQuery[Q, R any](app *App, q Q) (R, error) {
-	return cqrs.HandleQuery[Q, R](app.queryRegistry, q)
 }

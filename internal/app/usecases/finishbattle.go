@@ -3,7 +3,7 @@ package usecases
 import (
 	"github.com/toledoom/gork/internal/app/command"
 	"github.com/toledoom/gork/internal/app/query"
-	"github.com/toledoom/gork/pkg/gork/cqrs"
+	"github.com/toledoom/gork/pkg/gork"
 )
 
 type FinishBattleInput struct {
@@ -14,14 +14,14 @@ type FinishBattleOutput struct {
 	Player1Score, Player2Score int64
 }
 
-func FinishBattle(cr *cqrs.CommandRegistry, qr *cqrs.QueryRegistry) func(fbi FinishBattleInput) (FinishBattleOutput, error) {
+func FinishBattle(cr *gork.CommandRegistry, qr *gork.QueryRegistry) func(fbi FinishBattleInput) (FinishBattleOutput, error) {
 	return func(fbi FinishBattleInput) (FinishBattleOutput, error) {
 		finishBattleCommand := command.FinishBattle{
 			BattleID: fbi.BattleID,
 			WinnerID: fbi.WinnerID,
 		}
 
-		err := cqrs.HandleCommand(cr, &finishBattleCommand)
+		err := gork.HandleCommand(cr, &finishBattleCommand)
 		if err != nil {
 			return FinishBattleOutput{}, err
 		}
@@ -30,7 +30,7 @@ func FinishBattle(cr *cqrs.CommandRegistry, qr *cqrs.QueryRegistry) func(fbi Fin
 			BattleID: fbi.BattleID,
 		}
 
-		queryResult, err := cqrs.HandleQuery[*query.GetBattleResult, *query.GetBattleResultResponse](qr, &getBattleResultQuery)
+		queryResult, err := gork.HandleQuery[*query.GetBattleResult, *query.GetBattleResultResponse](qr, &getBattleResultQuery)
 		if err != nil {
 			return FinishBattleOutput{}, err
 		}
