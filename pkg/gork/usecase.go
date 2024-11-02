@@ -11,7 +11,7 @@ type UseCaseRegistry struct {
 	useCases map[string]any
 }
 
-func NewUseCaseRegistry() *UseCaseRegistry {
+func newUseCaseRegistry() *UseCaseRegistry {
 	return &UseCaseRegistry{
 		useCases: make(map[string]any),
 	}
@@ -38,17 +38,19 @@ func ExecuteUseCase[I, O any](app *App, input I) (O, error) {
 	}
 
 	uc := tryUseCase.(UseCase[I, O])
+	s := NewScope(app.container)
 
-	uow := GetService[Worker](app.container)
-	app.SetupCommandsAndQueries(uow)
+	app.queryHandlersSetup(s, app.queryRegistry)
+	app.commandHandlersSetup(s, app.commandRegistry)
 
 	output, err := uc(input)
 	if err != nil {
 		return output, err
 	}
 
+	uow := GetService[Worker](s)
 	uow.Commit()
-	eventPublisher := GetService[*EventPublisher](app.container)
+	eventPublisher := GetService[*EventPublisher](s)
 	for _, ev := range uow.DomainEvents() {
 		eventPublisher.publish(ev)
 	}

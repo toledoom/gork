@@ -30,14 +30,8 @@ func (app *App) Start(servicesSetup ServicesSetup) {
 
 	servicesSetup(app.container)
 
-	app.queryRegistry = NewQueryRegistry()
-	app.commandRegistry = NewCommandRegistry()
-	app.useCaseRegistry = NewUseCaseRegistry()
-
+	app.queryRegistry = newQueryRegistry()
+	app.commandRegistry = newCommandRegistry()
+	app.useCaseRegistry = newUseCaseRegistry()
 	app.useCasesSetup(app.useCaseRegistry, app.commandRegistry, app.queryRegistry)
-}
-
-func (app *App) SetupCommandsAndQueries(unitOfWork Worker) {
-	app.queryHandlersSetup(app.container, app.queryRegistry)
-	app.commandHandlersSetup(app.container, app.commandRegistry)
 }

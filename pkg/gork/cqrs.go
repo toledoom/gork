@@ -11,7 +11,7 @@ type CommandRegistry struct {
 	commandHandlers map[string]any
 }
 
-func NewCommandRegistry() *CommandRegistry {
+func newCommandRegistry() *CommandRegistry {
 	return &CommandRegistry{
 		commandHandlers: make(map[string]any),
 	}
@@ -45,7 +45,7 @@ type QueryRegistry struct {
 	queryHandlers map[string]any
 }
 
-func NewQueryRegistry() *QueryRegistry {
+func newQueryRegistry() *QueryRegistry {
 	return &QueryRegistry{
 		queryHandlers: make(map[string]any),
 	}
