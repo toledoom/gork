@@ -5,87 +5,80 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/toledoom/gork/pkg/gork"
-	"github.com/toledoom/gork/pkg/gork/cqrs"
 )
 
-func TestAppHandlesCommandsAndQueries(t *testing.T) {
+func TestAppExecutesUseCase(t *testing.T) {
 	assert := assert.New(t)
 
-	commandHandlerSetup := func(container *gork.Container, commandRegistry *cqrs.CommandRegistry) {
-		cqrs.RegisterCommandHandler[*dumbCommand](commandRegistry, dumbCommandHandler)
+	commandHandlerSetup := func(s *gork.Scope, commandRegistry *gork.CommandRegistry) {
+		gork.RegisterCommandHandler(commandRegistry, dumbCommandHandler)
 	}
-	queryHandlersSetup := func(container *gork.Container, commandRegistry *cqrs.QueryRegistry) {
-		cqrs.RegisterQueryHandler[*dumbQuery, string](commandRegistry, dumbQueryHandler)
+	queryHandlersSetup := func(s *gork.Scope, commandRegistry *gork.QueryRegistry) {
+		gork.RegisterQueryHandler(commandRegistry, dumbQueryHandler)
 	}
-	servicesSetup := func(container *gork.Container) {}
-	repositoriesSetup := func(container *gork.Container, uow gork.Worker) {}
-	storageMapperSetup := func(datamapper *gork.StorageMapper, container *gork.Container) {}
-	eventPublisherSetup := func(eventPublisher *gork.EventPublisher, container *gork.Container) {}
+	useCaseSetup := func(ucr *gork.UseCaseRegistry, cr *gork.CommandRegistry, qr *gork.QueryRegistry) {
+		gork.RegisterUseCase(ucr, dumbUseCase(cr, qr))
+	}
+	servicesSetup := func(container *gork.Container) {
+		gork.RegisterService(container, func(s *gork.Scope) gork.Worker { return &dumbUnitOfWork{} }, gork.USECASE)
+		gork.RegisterService(container, func(s *gork.Scope) *gork.EventPublisher { return gork.NewPublisher() }, gork.USECASE)
+	}
 
-	app := gork.NewApp(commandHandlerSetup, queryHandlersSetup)
-	app.Start(servicesSetup, repositoriesSetup, storageMapperSetup, eventPublisherSetup)
-	app.SetupCommandsAndQueries(&dumbUnitOfWork{})
+	app := gork.NewApp(useCaseSetup, commandHandlerSetup, queryHandlersSetup)
+	app.Start(servicesSetup)
 
-	dc := &dumbCommand{}
-	err := gork.HandleCommand[*dumbCommand](app, dc)
+	dumbOutput, err := gork.ExecuteUseCase[dumbUseCaseInput, dumbUseCaseOutput](app, dumbUseCaseInput{})
+
 	assert.Nil(err)
-
-	dq := &dumbQuery{}
-	resp, err := gork.HandleQuery[*dumbQuery, string](app, dq)
-	assert.Nil(err)
-	assert.Equal("a value", resp)
+	assert.Equal("a value", dumbOutput.response)
 }
 
-func TestAppErrorsWhenHandlingUnregisteredCommandsAndQueries(t *testing.T) {
+func TestAppErrorsWhenHandlingUnregisteredCommands(t *testing.T) {
 	assert := assert.New(t)
 
-	commandHandlerSetup := func(container *gork.Container, commandRegistry *cqrs.CommandRegistry) {}
-	queryHandlersSetup := func(container *gork.Container, commandRegistry *cqrs.QueryRegistry) {}
-	servicesSetup := func(container *gork.Container) {}
-	repositoriesSetup := func(container *gork.Container, uow gork.Worker) {}
-	storageMapperSetup := func(datamapper *gork.StorageMapper, container *gork.Container) {}
-	eventPublisherSetup := func(eventPublisher *gork.EventPublisher, container *gork.Container) {}
+	commandHandlerSetup := func(s *gork.Scope, commandRegistry *gork.CommandRegistry) {}
+	queryHandlersSetup := func(s *gork.Scope, commandRegistry *gork.QueryRegistry) {}
+	servicesSetup := func(container *gork.Container) {
+		gork.RegisterService(container, func(s *gork.Scope) gork.Worker { return &dumbUnitOfWork{} }, gork.USECASE)
+		gork.RegisterService(container, func(s *gork.Scope) *gork.EventPublisher { return gork.NewPublisher() }, gork.USECASE)
+	}
+	useCaseSetup := func(ucr *gork.UseCaseRegistry, cr *gork.CommandRegistry, qr *gork.QueryRegistry) {
+		gork.RegisterUseCase(ucr, dumbUseCase(cr, qr))
+	}
 
-	app := gork.NewApp(commandHandlerSetup, queryHandlersSetup)
-	app.Start(servicesSetup, repositoriesSetup, storageMapperSetup, eventPublisherSetup)
-	app.SetupCommandsAndQueries(&dumbUnitOfWork{})
+	app := gork.NewApp(useCaseSetup, commandHandlerSetup, queryHandlersSetup)
+	app.Start(servicesSetup)
 
-	dc := &dumbCommand{}
-	err := gork.HandleCommand[*dumbCommand](app, dc)
-	assert.IsType(&cqrs.CommandNotRegisteredError{}, err)
-
-	dq := &dumbQuery{}
-	_, err = gork.HandleQuery[*dumbQuery, string](app, dq)
-	assert.IsType(&cqrs.QueryNotRegisteredError{}, err)
+	_, err := gork.ExecuteUseCase[dumbUseCaseInput, dumbUseCaseOutput](app, dumbUseCaseInput{})
+	assert.IsType(&gork.CommandNotRegisteredError{}, err)
 }
 
-func TestAppUseUow(t *testing.T) {
+func TestAppErrorsWhenHandlingUnregisteredQueries(t *testing.T) {
 	assert := assert.New(t)
 
-	commandHandlerSetup := func(container *gork.Container, commandRegistry *cqrs.CommandRegistry) {
-		cqrs.RegisterCommandHandler[*dumbCommand](commandRegistry, persistEntityCommandHandler(gork.GetService[*dumbEntityUowRepository](container)))
+	commandHandlerSetup := func(s *gork.Scope, commandRegistry *gork.CommandRegistry) {
+		gork.RegisterCommandHandler(commandRegistry, persistEntityCommandHandler(gork.GetService[*dumbEntityUowRepository](s)))
 	}
-	queryHandlersSetup := func(container *gork.Container, commandRegistry *cqrs.QueryRegistry) {}
-	servicesSetup := func(container *gork.Container) {}
-	repositoriesSetup := func(container *gork.Container, uow gork.Worker) {
-		gork.AddService[*dumbEntityUowRepository](container, func(*gork.Container) *dumbEntityUowRepository {
+	queryHandlersSetup := func(s *gork.Scope, commandRegistry *gork.QueryRegistry) {}
+	servicesSetup := func(container *gork.Container) {
+		gork.RegisterService(container, func(s *gork.Scope) gork.Worker { return &dumbUnitOfWork{} }, gork.USECASE)
+		gork.RegisterService(container, func(s *gork.Scope) *dumbEntityUowRepository {
 			return &dumbEntityUowRepository{
-				uow: uow,
+				uow: gork.GetService[gork.Worker](s),
 			}
-		})
+		}, gork.USECASE)
+		gork.RegisterService(container, func(s *gork.Scope) *gork.EventPublisher { return gork.NewPublisher() }, gork.USECASE)
 	}
-	storageMapperSetup := func(storageMapper *gork.StorageMapper, container *gork.Container) {}
-	eventPublisherSetup := func(eventPublisher *gork.EventPublisher, container *gork.Container) {}
+	useCaseSetup := func(ucr *gork.UseCaseRegistry, cr *gork.CommandRegistry, qr *gork.QueryRegistry) {
+		gork.RegisterUseCase(ucr, dumbUseCase(cr, qr))
+	}
 
-	dumbUow := &dumbUnitOfWork{}
-	app := gork.NewApp(commandHandlerSetup, queryHandlersSetup)
-	app.Start(servicesSetup, repositoriesSetup, storageMapperSetup, eventPublisherSetup)
-	app.SetupCommandsAndQueries(dumbUow)
+	app := gork.NewApp(useCaseSetup, commandHandlerSetup, queryHandlersSetup)
+	app.Start(servicesSetup)
 
-	dc := &dumbCommand{}
-	err := gork.HandleCommand[*dumbCommand](app, dc)
-	assert.NoError(err)
-	assert.Len(dumbUow.entities, 1)
+	_, err := gork.ExecuteUseCase[dumbUseCaseInput, dumbUseCaseOutput](app, dumbUseCaseInput{})
+	assert.Error(err)
+	assert.IsType(&gork.QueryNotRegisteredError{}, err)
 }
 
 type dumbUnitOfWork struct {
@@ -96,5 +89,13 @@ type dumbUnitOfWork struct {
 
 func (uow *dumbUnitOfWork) RegisterNew(newEntity gork.Entity) error {
 	uow.entities = append(uow.entities, newEntity)
+	return nil
+}
+
+func (uow *dumbUnitOfWork) Commit() error {
+	return nil
+}
+
+func (uow *dumbUnitOfWork) DomainEvents() []gork.Event {
 	return nil
 }

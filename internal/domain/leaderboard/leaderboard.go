@@ -6,7 +6,7 @@ type Member struct {
 }
 
 type Ranking interface {
-	GetRank(playerID string) (int64, error)
+	GetRank(playerID string) (uint64, error)
 	GetTopPlayers(limit int64) ([]Member, error)
 	UpdateScore(playerID string, score int64) error
 }

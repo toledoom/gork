@@ -4,8 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/toledoom/gork/internal/app/command"
-	"github.com/toledoom/gork/internal/app/query"
+	"github.com/toledoom/gork/internal/app/usecases"
 	"github.com/toledoom/gork/internal/ports/grpc/proto/battle"
 	"github.com/toledoom/gork/internal/ports/grpc/proto/leaderboard"
 	"github.com/toledoom/gork/internal/ports/grpc/proto/player"
@@ -28,13 +27,12 @@ func NewGameServer(app *gork.App) *GameServer {
 
 func (s *GameServer) StartBattle(ctx context.Context, sbr *battle.StartBattleRequest) (*battle.StartBattleResponse, error) {
 	battleID := uuid.New().String()
-	c := &command.StartBattle{
+	input := usecases.StartBattleInput{
 		BattleID:  battleID,
 		Player1ID: sbr.PlayerId1,
 		Player2ID: sbr.PlayerId2,
 	}
-
-	err := gork.HandleCommand[*command.StartBattle](s.app, c)
+	_, err := gork.ExecuteUseCase[usecases.StartBattleInput, usecases.StartBattleOutput](s.app, input)
 	if err != nil {
 		return nil, err
 	}
@@ -45,56 +43,48 @@ func (s *GameServer) StartBattle(ctx context.Context, sbr *battle.StartBattleReq
 }
 
 func (s *GameServer) FinishBattle(ctx context.Context, fbr *battle.FinishBattleRequest) (*battle.FinishBattleResponse, error) {
-	c := &command.FinishBattle{
+	input := usecases.FinishBattleInput{
 		BattleID: fbr.BattleId,
 		WinnerID: fbr.WinnerId,
 	}
-
-	err := gork.HandleCommand[*command.FinishBattle](s.app, c)
-	if err != nil {
-		return nil, err
-	}
-
-	q := &query.GetBattleResult{
-		BattleID: fbr.BattleId,
-	}
-	gbrr, err := gork.HandleQuery[*query.GetBattleResult, *query.GetBattleResultResponse](s.app, q)
+	ucOutput, err := gork.ExecuteUseCase[usecases.FinishBattleInput, usecases.FinishBattleOutput](s.app, input)
 	if err != nil {
 		return nil, err
 	}
 
 	return &battle.FinishBattleResponse{
-		Player1Score: gbrr.Player1Score,
-		Player2Score: gbrr.Player2Score,
+		Player1Score: ucOutput.Player1Score,
+		Player2Score: ucOutput.Player2Score,
 	}, nil
 }
 
 func (s *GameServer) GetRank(ctx context.Context, grr *leaderboard.GetRankRequest) (*leaderboard.GetRankResponse, error) {
-	q := &query.GetRank{
+	input := usecases.GetRankInput{
 		PlayerID: grr.PlayerId,
 	}
 
-	getRankResponse, err := gork.HandleQuery[*query.GetRank, *query.GetRankResponse](s.app, q)
+	output, err := gork.ExecuteUseCase[usecases.GetRankInput, usecases.GetRankOutput](s.app, input)
 	if err != nil {
 		return nil, err
 	}
 
 	return &leaderboard.GetRankResponse{
-		Rank: getRankResponse.Rank,
+		Rank: output.Rank,
 	}, err
 }
 
 func (s *GameServer) GetTopPlayers(ctx context.Context, gtp *leaderboard.GetTopPlayersRequest) (*leaderboard.GetTopPlayersResponse, error) {
-	q := &query.GetTopPlayers{
+	input := usecases.GetTopPlayersInput{
 		NumPlayers: gtp.NumPlayers,
 	}
-	getTopPlayersResponse, err := gork.HandleQuery[*query.GetTopPlayers, *query.GetTopPlayersResponse](s.app, q)
+
+	output, err := gork.ExecuteUseCase[usecases.GetTopPlayersInput, usecases.GetTopPlayersOutput](s.app, input)
 	if err != nil {
 		return nil, err
 	}
 
 	var protoMemberList []*leaderboard.Member
-	for _, m := range getTopPlayersResponse.MemberList {
+	for _, m := range output.MemberList {
 		protoMember := &leaderboard.Member{
 			Id:    m.PlayerID,
 			Score: m.Score,
@@ -108,11 +98,12 @@ func (s *GameServer) GetTopPlayers(ctx context.Context, gtp *leaderboard.GetTopP
 }
 
 func (s *GameServer) CreatePlayer(ctx context.Context, cpr *player.CreatePlayerRequest) (*player.CreatePlayerResponse, error) {
-	c := &command.CreatePlayer{
+	input := usecases.CreatePlayerInput{
 		PlayerID: cpr.Id,
 		Name:     cpr.Name,
 	}
-	err := gork.HandleCommand[*command.CreatePlayer](s.app, c)
+
+	_, err := gork.ExecuteUseCase[usecases.CreatePlayerInput, usecases.CreatePlayerOutput](s.app, input)
 	if err != nil {
 		return nil, err
 	}
@@ -121,16 +112,17 @@ func (s *GameServer) CreatePlayer(ctx context.Context, cpr *player.CreatePlayerR
 }
 
 func (s *GameServer) GetPlayerById(ctx context.Context, cpr *player.GetPlayerByIdRequest) (*player.GetPlayerByIdResponse, error) {
-	q := &query.GetPlayerByID{
+	input := usecases.GetPlayerByIDInput{
 		PlayerID: cpr.Id,
 	}
-	getPlayerByIDResponse, err := gork.HandleQuery[*query.GetPlayerByID, *query.GetPlayerByIDResponse](s.app, q)
+
+	output, err := gork.ExecuteUseCase[usecases.GetPlayerByIDInput, usecases.GetPlayerByIDOutput](s.app, input)
 	if err != nil {
 		return nil, err
 	}
 
 	return &player.GetPlayerByIdResponse{
-		Name:  getPlayerByIDResponse.Player.Name,
-		Score: getPlayerByIDResponse.Player.Score,
+		Name:  output.Player.Name,
+		Score: output.Player.Score,
 	}, err
 }

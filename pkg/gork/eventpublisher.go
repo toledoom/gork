@@ -14,7 +14,7 @@ type EventPublisher struct {
 	handlers map[string][]eventHandler
 }
 
-func newPublisher() *EventPublisher {
+func NewPublisher() *EventPublisher {
 	return &EventPublisher{
 		handlers: make(map[string][]eventHandler),
 	}

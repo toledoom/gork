@@ -1,81 +1,37 @@
 package gork
 
-import (
-	"net/http"
-
-	"github.com/toledoom/gork/pkg/gork/cqrs"
-
-	"google.golang.org/grpc"
-)
-
 type App struct {
-	container         *Container
-	storageMapper     *StorageMapper
-	repositoriesSetup RepositoriesSetup
-	eventPublisher    *EventPublisher
+	container *Container
 
-	commandRegistry *cqrs.CommandRegistry
-	queryRegistry   *cqrs.QueryRegistry
+	commandRegistry *CommandRegistry
+	queryRegistry   *QueryRegistry
+	useCaseRegistry *UseCaseRegistry
 
 	commandHandlersSetup CommandHandlersSetup
 	queryHandlersSetup   QueryHandlersSetup
+	useCasesSetup        UseCasesSetup
 }
 
-func NewApp(commandHandlersSetup CommandHandlersSetup, queryHandlersSetup QueryHandlersSetup) *App {
+func NewApp(
+	useCasesSetup UseCasesSetup,
+	commandHandlersSetup CommandHandlersSetup,
+	queryHandlersSetup QueryHandlersSetup) *App {
 	container := newContainer()
-	storageMapper := newStorageMapper()
-	AddService[*EventPublisher](container, func(*Container) *EventPublisher { return newPublisher() })
-	eventPublisher := GetService[*EventPublisher](container)
 
 	return &App{
-		container:      container,
-		storageMapper:  storageMapper,
-		eventPublisher: eventPublisher,
-
+		container:            container,
 		commandHandlersSetup: commandHandlersSetup,
 		queryHandlersSetup:   queryHandlersSetup,
+		useCasesSetup:        useCasesSetup,
 	}
 }
 
-func (app *App) Start(
-	servicesSetup ServicesSetup,
-	repositoriesSetup RepositoriesSetup,
-	dataMapperSetup StorageMapperSetup,
-	eventPublisherSetup EventPublisherSetup) {
+func (app *App) Start(servicesSetup ServicesSetup) {
 
 	servicesSetup(app.container)
-	dataMapperSetup(app.storageMapper, app.container)
-	eventPublisherSetup(app.eventPublisher, app.container)
 
-	app.repositoriesSetup = repositoriesSetup
-	app.queryRegistry = cqrs.NewQueryRegistry()
-	app.commandRegistry = cqrs.NewCommandRegistry()
-}
-
-func HandleCommand[T any](app *App, c T) error {
-	return cqrs.HandleCommand[T](app.commandRegistry, c)
-}
-
-func HandleQuery[Q, R any](app *App, q Q) (R, error) {
-	return cqrs.HandleQuery[Q, R](app.queryRegistry, q)
-}
-
-func (app *App) SetupCommandsAndQueries(unitOfWork Worker) {
-	app.repositoriesSetup(app.container, unitOfWork)
-	app.queryHandlersSetup(app.container, app.queryRegistry)
-	app.commandHandlersSetup(app.container, app.commandRegistry)
-}
-
-func (app *App) GrpcServer(options ...grpc.ServerOption) *grpc.Server {
-	interceptor := WithCommitAndNotifyInterceptor(app, app.storageMapper)
-	options = append(options, interceptor)
-	s := grpc.NewServer(options...)
-
-	return s
-}
-
-func (app *App) HttpListenAndServe(port string, h http.Handler) error {
-	middleware := WithCommitAndNotifyMiddleware(app, app.storageMapper)
-	gorkHandler := middleware(h)
-	return http.ListenAndServe(port, gorkHandler)
+	app.queryRegistry = newQueryRegistry()
+	app.commandRegistry = newCommandRegistry()
+	app.useCaseRegistry = newUseCaseRegistry()
+	app.useCasesSetup(app.useCaseRegistry, app.commandRegistry, app.queryRegistry)
 }

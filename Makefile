@@ -48,3 +48,7 @@ proto:
 build:
 	docker compose build
 .PHONY: build
+
+test:
+	go test -v ./... -short
+.PHONY: test

@@ -5,8 +5,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/toledoom/gork/internal/app/command"
-	"github.com/toledoom/gork/internal/app/query"
+	"github.com/toledoom/gork/internal/app/usecases"
 	"github.com/toledoom/gork/internal/ports/grpc/proto/battle"
 	"github.com/toledoom/gork/internal/ports/grpc/proto/leaderboard"
 	"github.com/toledoom/gork/internal/ports/grpc/proto/player"
@@ -29,57 +28,51 @@ func (api *Api) StartBattleHandler(w http.ResponseWriter, r *http.Request) {
 	battleID := uuid.New().String()
 
 	httpReq := &battle.StartBattleRequest{}
-	startBattleReq, err := decodeHttpRequest[*battle.StartBattleRequest](r, w, httpReq)
+	startBattleReq, err := decodeHttpRequest[*battle.StartBattleRequest](r, httpReq)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	c := &command.StartBattle{
+	input := usecases.StartBattleInput{
 		BattleID:  battleID,
 		Player1ID: startBattleReq.PlayerId1,
 		Player2ID: startBattleReq.PlayerId2,
 	}
-
-	err = gork.HandleCommand[*command.StartBattle](api.app, c)
+	_, err = gork.ExecuteUseCase[usecases.StartBattleInput, usecases.StartBattleOutput](api.app, input)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
+	resp := &battle.StartBattleResponse{
+		BattleId: battleID,
+	}
+	marshalledResp, _ := protojson.Marshal(resp)
 	w.WriteHeader(http.StatusCreated)
+	w.Write(marshalledResp)
 }
 
 func (api *Api) FinishBattleHandler(w http.ResponseWriter, r *http.Request) {
 	httpReq := &battle.FinishBattleRequest{}
-	finishBattleReq, err := decodeHttpRequest[*battle.FinishBattleRequest](r, w, httpReq)
+	finishBattleReq, err := decodeHttpRequest[*battle.FinishBattleRequest](r, httpReq)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	c := &command.FinishBattle{
+
+	input := usecases.FinishBattleInput{
 		BattleID: finishBattleReq.BattleId,
 		WinnerID: finishBattleReq.WinnerId,
 	}
-
-	err = gork.HandleCommand[*command.FinishBattle](api.app, c)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	q := &query.GetBattleResult{
-		BattleID: finishBattleReq.BattleId,
-	}
-	gbrr, err := gork.HandleQuery[*query.GetBattleResult, *query.GetBattleResultResponse](api.app, q)
+	ucOutput, err := gork.ExecuteUseCase[usecases.FinishBattleInput, usecases.FinishBattleOutput](api.app, input)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	resp := &battle.FinishBattleResponse{
-		Player1Score: gbrr.Player1Score,
-		Player2Score: gbrr.Player2Score,
+		Player1Score: ucOutput.Player1Score,
+		Player2Score: ucOutput.Player2Score,
 	}
 	marshalledResp, _ := protojson.Marshal(resp)
 	w.Write(marshalledResp)
@@ -87,23 +80,24 @@ func (api *Api) FinishBattleHandler(w http.ResponseWriter, r *http.Request) {
 
 func (api *Api) GetRankHandler(w http.ResponseWriter, r *http.Request) {
 	httpReq := &leaderboard.GetRankRequest{}
-	getRankReq, err := decodeHttpRequest[*leaderboard.GetRankRequest](r, w, httpReq)
+	getRankReq, err := decodeHttpRequest[*leaderboard.GetRankRequest](r, httpReq)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	q := &query.GetRank{
+
+	input := usecases.GetRankInput{
 		PlayerID: getRankReq.PlayerId,
 	}
 
-	getRankResponse, err := gork.HandleQuery[*query.GetRank, *query.GetRankResponse](api.app, q)
+	output, err := gork.ExecuteUseCase[usecases.GetRankInput, usecases.GetRankOutput](api.app, input)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	resp := &leaderboard.GetRankResponse{
-		Rank: getRankResponse.Rank,
+		Rank: output.Rank,
 	}
 	marshalledResp, _ := protojson.Marshal(resp)
 	w.Write(marshalledResp)
@@ -111,23 +105,24 @@ func (api *Api) GetRankHandler(w http.ResponseWriter, r *http.Request) {
 
 func (api *Api) GetTopPlayersHandler(w http.ResponseWriter, r *http.Request) {
 	httpReq := &leaderboard.GetTopPlayersRequest{}
-	getTopPlayersReq, err := decodeHttpRequest[*leaderboard.GetTopPlayersRequest](r, w, httpReq)
+	getTopPlayersReq, err := decodeHttpRequest[*leaderboard.GetTopPlayersRequest](r, httpReq)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	q := &query.GetTopPlayers{
+
+	input := usecases.GetTopPlayersInput{
 		NumPlayers: getTopPlayersReq.NumPlayers,
 	}
 
-	getTopPlayersResponse, err := gork.HandleQuery[*query.GetTopPlayers, *query.GetTopPlayersResponse](api.app, q)
+	output, err := gork.ExecuteUseCase[usecases.GetTopPlayersInput, usecases.GetTopPlayersOutput](api.app, input)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	var memberList []*leaderboard.Member
-	for _, m := range getTopPlayersResponse.MemberList {
+	for _, m := range output.MemberList {
 		member := &leaderboard.Member{
 			Id:    m.PlayerID,
 			Score: m.Score,
@@ -143,52 +138,55 @@ func (api *Api) GetTopPlayersHandler(w http.ResponseWriter, r *http.Request) {
 
 func (api *Api) CreatePlayerHandler(w http.ResponseWriter, r *http.Request) {
 	httpReq := &player.CreatePlayerRequest{}
-	createPlayerReq, err := decodeHttpRequest[*player.CreatePlayerRequest](r, w, httpReq)
+	createPlayerReq, err := decodeHttpRequest[*player.CreatePlayerRequest](r, httpReq)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	c := &command.CreatePlayer{
+
+	input := usecases.CreatePlayerInput{
 		PlayerID: createPlayerReq.Id,
 		Name:     createPlayerReq.Name,
 	}
 
-	err = gork.HandleCommand[*command.CreatePlayer](api.app, c)
+	_, err = gork.ExecuteUseCase[usecases.CreatePlayerInput, usecases.CreatePlayerOutput](api.app, input)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	marshalledResp, _ := protojson.Marshal(&player.CreatePlayerResponse{})
+	w.WriteHeader(http.StatusCreated)
 	w.Write(marshalledResp)
 }
 
 func (api *Api) GetPlayerByIDHandler(w http.ResponseWriter, r *http.Request) {
 	httpReq := &player.GetPlayerByIdRequest{}
-	getPlayerByIDReq, err := decodeHttpRequest[*player.GetPlayerByIdRequest](r, w, httpReq)
+	getPlayerByIDReq, err := decodeHttpRequest[*player.GetPlayerByIdRequest](r, httpReq)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	q := &query.GetPlayerByID{
+
+	input := usecases.GetPlayerByIDInput{
 		PlayerID: getPlayerByIDReq.Id,
 	}
 
-	getPlayerByIDResponse, err := gork.HandleQuery[*query.GetPlayerByID, *query.GetPlayerByIDResponse](api.app, q)
+	output, err := gork.ExecuteUseCase[usecases.GetPlayerByIDInput, usecases.GetPlayerByIDOutput](api.app, input)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	resp := &player.GetPlayerByIdResponse{
-		Name:  getPlayerByIDResponse.Player.Name,
-		Score: getPlayerByIDResponse.Player.Score,
+		Name:  output.Player.Name,
+		Score: output.Player.Score,
 	}
 	marshalledResp, _ := protojson.Marshal(resp)
 	w.Write(marshalledResp)
 }
 
-func decodeHttpRequest[T protoreflect.ProtoMessage](r *http.Request, w http.ResponseWriter, httpReq T) (T, error) {
+func decodeHttpRequest[T protoreflect.ProtoMessage](r *http.Request, httpReq T) (T, error) {
 	defer r.Body.Close()
 	body, err := io.ReadAll(io.Reader(r.Body))
 	if err != nil {

@@ -73,3 +73,30 @@ type dumbEntity struct {
 
 	ID string
 }
+
+func dumbUseCase(cr *gork.CommandRegistry, qr *gork.QueryRegistry) func(dumbUseCaseInput) (dumbUseCaseOutput, error) {
+	return func(dumbUseCaseInput) (dumbUseCaseOutput, error) {
+		dc := &dumbCommand{}
+
+		err := gork.HandleCommand(cr, dc)
+		if err != nil {
+			return dumbUseCaseOutput{}, err
+		}
+
+		dq := &dumbQuery{}
+		resp, err := gork.HandleQuery[*dumbQuery, string](qr, dq)
+		if err != nil {
+			return dumbUseCaseOutput{}, err
+		}
+
+		return dumbUseCaseOutput{
+			response: resp,
+		}, nil
+	}
+}
+
+type dumbUseCaseInput struct{}
+
+type dumbUseCaseOutput struct {
+	response string
+}

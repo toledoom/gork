@@ -14,16 +14,14 @@ type Worker interface {
 	DomainEvents() []Event
 }
 
-type Filter interface { // TODO: Think about implementations of actual filters
-	Condition() bool
-}
+type Filter any
 
 type UnitOfWork struct {
 	newEntities, dirtyEntities, deletedEntities []Entity
 	storageMapper                               *StorageMapper
 }
 
-func newUnitOfWork(storagemapper *StorageMapper) *UnitOfWork {
+func NewUnitOfWork(storagemapper *StorageMapper) *UnitOfWork {
 	return &UnitOfWork{
 		storageMapper: storagemapper,
 	}

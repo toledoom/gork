@@ -14,7 +14,7 @@ message GetRankRequest {
 }
 
 message GetRankResponse {
-    int64 rank = 1;
+    uint64 rank = 1;
 }
 
 message GetTopPlayersRequest {
