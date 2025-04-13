@@ -14,7 +14,7 @@ type FinishBattleOutput struct {
 	Player1Score, Player2Score int64
 }
 
-func FinishBattle(cr *gork.CommandRegistry, qr *gork.QueryRegistry) func(fbi FinishBattleInput) (FinishBattleOutput, error) {
+func FinishBattle(cr *gork.CommandRegistry, qr *gork.QueryRegistry) gork.UseCase[FinishBattleInput, FinishBattleOutput] {
 	return func(fbi FinishBattleInput) (FinishBattleOutput, error) {
 		finishBattleCommand := command.FinishBattle{
 			BattleID: fbi.BattleID,

@@ -12,7 +12,7 @@ type StartBattleInput struct {
 type StartBattleOutput struct {
 }
 
-func StartBattle(cr *gork.CommandRegistry) func(sbi StartBattleInput) (StartBattleOutput, error) {
+func StartBattle(cr *gork.CommandRegistry, qr *gork.QueryRegistry) gork.UseCase[StartBattleInput, StartBattleOutput] {
 	return func(sbi StartBattleInput) (StartBattleOutput, error) {
 		startBattleCommand := command.StartBattle{
 			BattleID:  sbi.BattleID,

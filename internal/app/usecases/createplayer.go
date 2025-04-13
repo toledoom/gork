@@ -15,7 +15,7 @@ type CreatePlayerOutput struct {
 	Player player.Player
 }
 
-func CreatePlayer(cr *gork.CommandRegistry, qr *gork.QueryRegistry) func(cpi CreatePlayerInput) (CreatePlayerOutput, error) {
+func CreatePlayer(cr *gork.CommandRegistry, qr *gork.QueryRegistry) gork.UseCase[CreatePlayerInput, CreatePlayerOutput] {
 	return func(cpi CreatePlayerInput) (CreatePlayerOutput, error) {
 		createPlayerCommand := command.CreatePlayer{
 			PlayerID: cpi.PlayerID,

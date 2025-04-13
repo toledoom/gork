@@ -13,7 +13,7 @@ type GetRankOutput struct {
 	Rank uint64
 }
 
-func GetRank(qr *gork.QueryRegistry) func(gri GetRankInput) (GetRankOutput, error) {
+func GetRank(cr *gork.CommandRegistry, qr *gork.QueryRegistry) gork.UseCase[GetRankInput, GetRankOutput] {
 	return func(gri GetRankInput) (GetRankOutput, error) {
 		getRankQuery := query.GetRank{
 			PlayerID: gri.PlayerID,
