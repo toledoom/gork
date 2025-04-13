@@ -7,41 +7,46 @@ import (
 
 type UseCase[I, O any] func(I) (O, error)
 
-type UseCaseRegistry struct {
-	useCases map[string]any
+type UseCaseBuilder[I, O any] func(cr *CommandRegistry, qr *QueryRegistry) UseCase[I, O]
+
+type UseCaseBuilderRegistry struct {
+	useCaseBuilders map[string]any
 }
 
-func newUseCaseRegistry() *UseCaseRegistry {
-	return &UseCaseRegistry{
-		useCases: make(map[string]any),
+func newUseCaseBuilderRegistry() *UseCaseBuilderRegistry {
+	return &UseCaseBuilderRegistry{
+		useCaseBuilders: make(map[string]any),
 	}
 }
 
-func RegisterUseCase[I, O any](ucr *UseCaseRegistry, uc UseCase[I, O]) {
+func RegisterUseCaseBuilder[I, O any](ucbr *UseCaseBuilderRegistry, ucb UseCaseBuilder[I, O]) {
 	var t I
-	ucr.useCases[reflect.TypeOf(t).String()] = uc
+	ucbr.useCaseBuilders[reflect.TypeOf(t).String()] = ucb
 }
 
-type UseCaseNotRegisteredError struct {
-	uc interface{}
+type UseCaseBuilderNotRegisteredError struct {
+	ucb interface{}
 }
 
-func (ucnre *UseCaseNotRegisteredError) Error() string {
-	return fmt.Sprintf("use case handler not registered for use case: %s", reflect.TypeOf(ucnre.uc).String())
+func (ucnre *UseCaseBuilderNotRegisteredError) Error() string {
+	return fmt.Sprintf("use case builder not registered for use case: %s", reflect.TypeOf(ucnre.ucb).String())
 }
 
 func ExecuteUseCase[I, O any](app *App, input I) (O, error) {
-	tryUseCase, ok := app.useCaseRegistry.useCases[reflect.TypeOf(input).String()]
+	tryUseCaseBuilder, ok := app.useCaseBuilderRegistry.useCaseBuilders[reflect.TypeOf(input).String()]
 	if !ok {
 		var r O
-		return r, &UseCaseNotRegisteredError{uc: input}
+		return r, &UseCaseBuilderNotRegisteredError{ucb: input}
 	}
 
-	uc := tryUseCase.(UseCase[I, O])
+	ucb := tryUseCaseBuilder.(UseCaseBuilder[I, O])
 	s := NewScope(app.container)
 
-	app.queryHandlersSetup(s, app.queryRegistry)
-	app.commandHandlersSetup(s, app.commandRegistry)
+	qr := newQueryRegistry()
+	cr := newCommandRegistry()
+	app.queryHandlersSetup(s, qr)
+	app.commandHandlersSetup(s, cr)
+	uc := ucb(cr, qr)
 
 	output, err := uc(input)
 	if err != nil {

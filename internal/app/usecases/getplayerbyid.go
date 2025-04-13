@@ -14,7 +14,7 @@ type GetPlayerByIDOutput struct {
 	Player *player.Player
 }
 
-func GetPlayerByID(qr *gork.QueryRegistry) func(gpbid GetPlayerByIDInput) (GetPlayerByIDOutput, error) {
+func GetPlayerByID(cr *gork.CommandRegistry, qr *gork.QueryRegistry) gork.UseCase[GetPlayerByIDInput, GetPlayerByIDOutput] {
 	return func(gpbid GetPlayerByIDInput) (GetPlayerByIDOutput, error) {
 		q := query.GetPlayerByID{
 			PlayerID: gpbid.PlayerID,

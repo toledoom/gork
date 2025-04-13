@@ -14,7 +14,7 @@ type GetTopPlayersOutput struct {
 	MemberList []*leaderboard.Member
 }
 
-func GetTopPlayers(qr *gork.QueryRegistry) func(gtpi GetTopPlayersInput) (GetTopPlayersOutput, error) {
+func GetTopPlayers(cr *gork.CommandRegistry, qr *gork.QueryRegistry) gork.UseCase[GetTopPlayersInput, GetTopPlayersOutput] {
 	return func(gtpi GetTopPlayersInput) (GetTopPlayersOutput, error) {
 		q := &query.GetTopPlayers{
 			NumPlayers: gtpi.NumPlayers,

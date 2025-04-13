@@ -106,13 +106,13 @@ func SetupQueryHandlers(s *gork.Scope, qr *gork.QueryRegistry) {
 	gork.RegisterQueryHandler(qr, query.GetBattleResultHandler(gork.GetService[battledomain.Repository](s)))
 }
 
-func SetupUseCases(ucr *gork.UseCaseRegistry, cr *gork.CommandRegistry, qr *gork.QueryRegistry) {
-	gork.RegisterUseCase(ucr, usecases.CreatePlayer(cr, qr))
-	gork.RegisterUseCase(ucr, usecases.FinishBattle(cr, qr))
-	gork.RegisterUseCase(ucr, usecases.GetPlayerByID(qr))
-	gork.RegisterUseCase(ucr, usecases.GetRank(qr))
-	gork.RegisterUseCase(ucr, usecases.GetTopPlayers(qr))
-	gork.RegisterUseCase(ucr, usecases.StartBattle(cr))
+func SetupUseCases(ucbr *gork.UseCaseBuilderRegistry) {
+	gork.RegisterUseCaseBuilder(ucbr, usecases.CreatePlayer)
+	gork.RegisterUseCaseBuilder(ucbr, usecases.FinishBattle)
+	gork.RegisterUseCaseBuilder(ucbr, usecases.GetPlayerByID)
+	gork.RegisterUseCaseBuilder(ucbr, usecases.GetRank)
+	gork.RegisterUseCaseBuilder(ucbr, usecases.GetTopPlayers)
+	gork.RegisterUseCaseBuilder(ucbr, usecases.StartBattle)
 }
 
 func SetupEventPublisher(s *gork.Scope, eventPublisher *gork.EventPublisher) {

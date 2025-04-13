@@ -1,11 +1,8 @@
 package gork
 
 type App struct {
-	container *Container
-
-	commandRegistry *CommandRegistry
-	queryRegistry   *QueryRegistry
-	useCaseRegistry *UseCaseRegistry
+	container              *Container
+	useCaseBuilderRegistry *UseCaseBuilderRegistry
 
 	commandHandlersSetup CommandHandlersSetup
 	queryHandlersSetup   QueryHandlersSetup
@@ -30,8 +27,6 @@ func (app *App) Start(servicesSetup ServicesSetup) {
 
 	servicesSetup(app.container)
 
-	app.queryRegistry = newQueryRegistry()
-	app.commandRegistry = newCommandRegistry()
-	app.useCaseRegistry = newUseCaseRegistry()
-	app.useCasesSetup(app.useCaseRegistry, app.commandRegistry, app.queryRegistry)
+	app.useCaseBuilderRegistry = newUseCaseBuilderRegistry()
+	app.useCasesSetup(app.useCaseBuilderRegistry)
 }
