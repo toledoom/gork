@@ -135,8 +135,12 @@ func (de *dumbEntity) AddEvent(e gork.Event) {
 	de.ag.Events = append(de.ag.Events, e)
 }
 
-func (a *dumbEntity) GetEvents() []gork.Event {
-	return a.ag.Events
+func (de *dumbEntity) GetEvents() []gork.Event {
+	return de.ag.Events
+}
+
+func (de *dumbEntity) Field1() string {
+	return de.field1
 }
 
 type dumbEntity struct {
