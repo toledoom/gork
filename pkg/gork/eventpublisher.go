@@ -20,18 +20,18 @@ func NewPublisher() *EventPublisher {
 	}
 }
 
-func (e *EventPublisher) Subscribe(handler eventHandler, events ...Event) {
+func (ep *EventPublisher) Subscribe(handler eventHandler, events ...Event) {
 	for _, event := range events {
-		handlers := e.handlers[event.Name()]
+		handlers := ep.handlers[event.Name()]
 		handlers = append(handlers, handler)
-		e.handlers[event.Name()] = handlers
+		ep.handlers[event.Name()] = handlers
 	}
 }
 
-func (e *EventPublisher) publish(event Event) error {
+func (ep *EventPublisher) publish(event Event) error {
 	var multipleError error
-	n := event.Name()
-	for _, handler := range e.handlers[n] {
+	eventName := event.Name()
+	for _, handler := range ep.handlers[eventName] {
 		err := handler.Handle(event)
 		if err != nil {
 			multipleError = multierror.Append(multipleError, err)

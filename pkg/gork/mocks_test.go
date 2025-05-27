@@ -11,11 +11,11 @@ type dumbCommand struct {
 	ID string
 }
 
-func dumbCommandHandler(dc *dumbCommand) error { return nil }
+func dumbCommandHandler(*dumbCommand) error { return nil }
 
 type dumbQuery struct{}
 
-func dumbQueryHandler(dc *dumbQuery) (string, error) { return "a value", nil }
+func dumbQueryHandler(*dumbQuery) (string, error) { return "a value", nil }
 
 func dumbUseCase(cr *gork.CommandRegistry, qr *gork.QueryRegistry) gork.UseCase[dumbUseCaseInput, dumbUseCaseOutput] {
 	return func(dumbUseCaseInput) (dumbUseCaseOutput, error) {
