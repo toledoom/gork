@@ -9,11 +9,11 @@ const (
 	CreationQuery = iota
 	UpdateQuery
 	DeletionQuery
-	FetchOneQUery
+	FetchOneQuery
 	FetchManyQuery
 )
 
-type MutationFn func(e Entity) error
+type MutationFn func(entity Entity) error
 type FetchOneFn func(id string) (Entity, error)
 type FetchManyFn func(filters ...Filter) ([]Entity, error)
 

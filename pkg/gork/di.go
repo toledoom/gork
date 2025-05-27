@@ -25,58 +25,58 @@ type Container struct {
 }
 
 type Scope struct {
-	c               *Container
+	container       *Container
 	useCaseServices map[string]any
 	id              uint64
 }
 
-func NewScope(c *Container) *Scope {
+func NewScope(container *Container) *Scope {
 	return &Scope{
-		c:               c,
+		container:       container,
 		useCaseServices: make(map[string]any),
 		id:              rand.Uint64(),
 	}
 }
 
-func RegisterService[T comparable](c *Container, builder Builder[T], l LifeTime) {
+func RegisterService[T comparable](container *Container, builder Builder[T], lifeTime LifeTime) {
 	serviceID := reflect.TypeOf((*T)(nil)).String()
-	c.serviceCollection[serviceID] = builder
-	c.serviceLifetimeList[serviceID] = l
+	container.serviceCollection[serviceID] = builder
+	container.serviceLifetimeList[serviceID] = lifeTime
 }
 
-func GetService[T comparable](s *Scope) T {
+func GetService[T comparable](scope *Scope) T {
 	serviceID := reflect.TypeOf((*T)(nil)).String()
-	lifeTime := s.c.serviceLifetimeList[serviceID]
+	lifeTime := scope.container.serviceLifetimeList[serviceID]
 
 	if lifeTime == SINGLETON {
-		s.c.mutex.RLock()
-		t, ok := s.c.singletonServices[serviceID].(T)
-		s.c.mutex.RUnlock()
+		scope.container.mutex.RLock()
+		service, ok := scope.container.singletonServices[serviceID].(T)
+		scope.container.mutex.RUnlock()
 		if ok {
-			return t
+			return service
 		}
-		builder := s.c.serviceCollection[serviceID].(Builder[T])
-		s.c.mutex.Lock()
-		s.c.singletonServices[serviceID] = builder(s)
-		s.c.mutex.Unlock()
+		builder := scope.container.serviceCollection[serviceID].(Builder[T])
+		scope.container.mutex.Lock()
+		scope.container.singletonServices[serviceID] = builder(scope)
+		scope.container.mutex.Unlock()
 
-		return s.c.singletonServices[serviceID].(T)
+		return scope.container.singletonServices[serviceID].(T)
 	}
 
 	if lifeTime == USECASE {
-		t, ok := s.useCaseServices[serviceID].(T)
+		service, ok := scope.useCaseServices[serviceID].(T)
 		if ok {
-			return t
+			return service
 
 		}
-		b := s.c.serviceCollection[serviceID].(Builder[T])
-		s.useCaseServices[serviceID] = b(s)
+		builder := scope.container.serviceCollection[serviceID].(Builder[T])
+		scope.useCaseServices[serviceID] = builder(scope)
 
-		return s.useCaseServices[serviceID].(T)
+		return scope.useCaseServices[serviceID].(T)
 	}
 
-	b := s.c.serviceCollection[serviceID].(Builder[T])
-	return b(s)
+	builder := scope.container.serviceCollection[serviceID].(Builder[T])
+	return builder(scope)
 }
 
 func newContainer() *Container {

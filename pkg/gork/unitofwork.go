@@ -53,27 +53,27 @@ func (uow *UnitOfWork) FetchMany(t reflect.Type, filters ...Filter) ([]Entity, e
 }
 
 func (uow *UnitOfWork) Commit() error {
-	for _, en := range uow.newEntities {
-		fn := uow.storageMapper.GetMutationFn(reflect.TypeOf(en), CreationQuery)
-		err := fn(en)
+	for _, newEntity := range uow.newEntities {
+		fn := uow.storageMapper.GetMutationFn(reflect.TypeOf(newEntity), CreationQuery)
+		err := fn(newEntity)
 		if err != nil {
-			return nil
+			return err
 		}
 	}
 
-	for _, en := range uow.dirtyEntities {
-		fn := uow.storageMapper.GetMutationFn(reflect.TypeOf(en), UpdateQuery)
-		err := fn(en)
+	for _, dirtyEntity := range uow.dirtyEntities {
+		fn := uow.storageMapper.GetMutationFn(reflect.TypeOf(dirtyEntity), UpdateQuery)
+		err := fn(dirtyEntity)
 		if err != nil {
-			return nil
+			return err
 		}
 	}
 
-	for _, en := range uow.deletedEntities {
-		fn := uow.storageMapper.GetMutationFn(reflect.TypeOf(en), DeletionQuery)
-		err := fn(en)
+	for _, deletedEntity := range uow.deletedEntities {
+		fn := uow.storageMapper.GetMutationFn(reflect.TypeOf(deletedEntity), DeletionQuery)
+		err := fn(deletedEntity)
 		if err != nil {
-			return nil
+			return err
 		}
 	}
 
@@ -82,14 +82,14 @@ func (uow *UnitOfWork) Commit() error {
 
 func (uow *UnitOfWork) DomainEvents() []Event {
 	var events []Event
-	for _, e := range uow.newEntities {
-		events = append(events, e.GetEvents()...)
+	for _, entity := range uow.newEntities {
+		events = append(events, entity.GetEvents()...)
 	}
-	for _, e := range uow.dirtyEntities {
-		events = append(events, e.GetEvents()...)
+	for _, entity := range uow.dirtyEntities {
+		events = append(events, entity.GetEvents()...)
 	}
-	for _, e := range uow.deletedEntities {
-		events = append(events, e.GetEvents()...)
+	for _, entity := range uow.deletedEntities {
+		events = append(events, entity.GetEvents()...)
 	}
 
 	return events

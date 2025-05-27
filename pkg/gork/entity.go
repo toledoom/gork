@@ -1,7 +1,7 @@
 package gork
 
 type Entity interface {
-	AddEvent(e Event)
+	AddEvent(event Event)
 	GetEvents() []Event
 }
 
@@ -9,10 +9,10 @@ type Aggregate struct {
 	Events []Event
 }
 
-func (a *Aggregate) AddEvent(e Event) {
-	a.Events = append(a.Events, e)
+func (aggregate *Aggregate) AddEvent(event Event) {
+	aggregate.Events = append(aggregate.Events, event)
 }
 
-func (a *Aggregate) GetEvents() []Event {
-	return a.Events
+func (aggregate *Aggregate) GetEvents() []Event {
+	return aggregate.Events
 }

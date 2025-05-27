@@ -23,20 +23,20 @@ func RegisterCommandHandler[T any](cr *CommandRegistry, ch CommandHandler[T]) {
 }
 
 type CommandNotRegisteredError struct {
-	c interface{}
+	command any
 }
 
 func (cnre *CommandNotRegisteredError) Error() string {
-	return fmt.Sprintf("command handler not registered for command %s", reflect.TypeOf(cnre.c).String())
+	return fmt.Sprintf("command handler not registered for command %s", reflect.TypeOf(cnre.command).String())
 }
 
-func HandleCommand[T any](cr *CommandRegistry, c T) error {
-	tryCommandHandlerh, ok := cr.commandHandlers[reflect.TypeOf(c).String()]
+func HandleCommand[T any](commandRegistry *CommandRegistry, command T) error {
+	tryCommandHandlerh, ok := commandRegistry.commandHandlers[reflect.TypeOf(command).String()]
 	if !ok {
-		return &CommandNotRegisteredError{c: c}
+		return &CommandNotRegisteredError{command: command}
 	}
-	ch := tryCommandHandlerh.(CommandHandler[T])
-	return ch(c)
+	commandHandler := tryCommandHandlerh.(CommandHandler[T])
+	return commandHandler(command)
 }
 
 type QueryHandler[T, R any] func(T) (R, error)
@@ -51,26 +51,26 @@ func newQueryRegistry() *QueryRegistry {
 	}
 }
 
-func RegisterQueryHandler[T, R any](qr *QueryRegistry, qh QueryHandler[T, R]) {
+func RegisterQueryHandler[T, R any](queryRegistry *QueryRegistry, queryHandler QueryHandler[T, R]) {
 	var t T
-	qr.queryHandlers[reflect.TypeOf(t).String()] = qh
+	queryRegistry.queryHandlers[reflect.TypeOf(t).String()] = queryHandler
 }
 
 type QueryNotRegisteredError struct {
-	q interface{}
+	query any
 }
 
 func (qnre *QueryNotRegisteredError) Error() string {
-	return fmt.Sprintf("query handler not registered for query %s", reflect.TypeOf(qnre.q).String())
+	return fmt.Sprintf("query handler not registered for query %s", reflect.TypeOf(qnre.query).String())
 }
 
-func HandleQuery[T, R any](qr *QueryRegistry, q T) (R, error) {
-	tryQueryHandler, ok := qr.queryHandlers[reflect.TypeOf(q).String()]
+func HandleQuery[T, R any](queryRegistry *QueryRegistry, query T) (R, error) {
+	tryQueryHandler, ok := queryRegistry.queryHandlers[reflect.TypeOf(query).String()]
 	if !ok {
 		var r R
-		return r, &QueryNotRegisteredError{q: q}
+		return r, &QueryNotRegisteredError{query: query}
 	}
 
-	qh := tryQueryHandler.(QueryHandler[T, R])
-	return qh(q)
+	queryHandler := tryQueryHandler.(QueryHandler[T, R])
+	return queryHandler(query)
 }

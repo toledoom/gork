@@ -19,44 +19,44 @@ func newUseCaseBuilderRegistry() *UseCaseBuilderRegistry {
 	}
 }
 
-func RegisterUseCaseBuilder[I, O any](ucbr *UseCaseBuilderRegistry, ucb UseCaseBuilder[I, O]) {
+func RegisterUseCaseBuilder[I, O any](useCaseBuilderRegistry *UseCaseBuilderRegistry, useCaseBuilder UseCaseBuilder[I, O]) {
 	var t I
-	ucbr.useCaseBuilders[reflect.TypeOf(t).String()] = ucb
+	useCaseBuilderRegistry.useCaseBuilders[reflect.TypeOf(t).String()] = useCaseBuilder
 }
 
 type UseCaseBuilderNotRegisteredError struct {
-	ucb interface{}
+	useCaseBuilder any
 }
 
 func (ucnre *UseCaseBuilderNotRegisteredError) Error() string {
-	return fmt.Sprintf("use case builder not registered for use case: %s", reflect.TypeOf(ucnre.ucb).String())
+	return fmt.Sprintf("use case builder not registered for use case: %s", reflect.TypeOf(ucnre.useCaseBuilder).String())
 }
 
 func ExecuteUseCase[I, O any](app *App, input I) (O, error) {
 	tryUseCaseBuilder, ok := app.useCaseBuilderRegistry.useCaseBuilders[reflect.TypeOf(input).String()]
 	if !ok {
 		var r O
-		return r, &UseCaseBuilderNotRegisteredError{ucb: input}
+		return r, &UseCaseBuilderNotRegisteredError{useCaseBuilder: input}
 	}
 
-	ucb := tryUseCaseBuilder.(UseCaseBuilder[I, O])
-	s := NewScope(app.container)
+	useCaseBuilder := tryUseCaseBuilder.(UseCaseBuilder[I, O])
+	scope := NewScope(app.container)
 
-	qr := newQueryRegistry()
-	cr := newCommandRegistry()
-	app.queryHandlersSetup(s, qr)
-	app.commandHandlersSetup(s, cr)
-	uc := ucb(cr, qr)
+	queryRegistry := newQueryRegistry()
+	commandRegistry := newCommandRegistry()
+	app.queryHandlersSetup(scope, queryRegistry)
+	app.commandHandlersSetup(scope, commandRegistry)
+	useCase := useCaseBuilder(commandRegistry, queryRegistry)
 
-	output, err := uc(input)
+	output, err := useCase(input)
 	if err != nil {
 		return output, err
 	}
 
-	uow := GetService[Worker](s)
-	uow.Commit()
-	eventPublisher := GetService[*EventPublisher](s)
-	for _, ev := range uow.DomainEvents() {
+	unitOfWork := GetService[Worker](scope)
+	unitOfWork.Commit()
+	eventPublisher := GetService[*EventPublisher](scope)
+	for _, ev := range unitOfWork.DomainEvents() {
 		eventPublisher.publish(ev)
 	}
 
